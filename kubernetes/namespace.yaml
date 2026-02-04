@@ -1,0 +1,112 @@
+# =============================================================================
+# OpenClaw Kubernetes Namespace
+# Version: 1.0.0
+# Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
+# Description: Namespace isolé pour OpenClaw avec labels de sécurité
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openclaw
+  labels:
+    # Identification
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/instance: openclaw-production
+    app.kubernetes.io/version: "2026.1.30"
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: openclaw-stack
+    app.kubernetes.io/managed-by: kubectl
+    # Sécurité - Pod Security Standards
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    # Métadonnées personnalisées
+    environment: production
+    team: security
+    cost-center: infrastructure
+  annotations:
+    # Documentation
+    description: "Namespace isolé pour OpenClaw - Assistant IA personnel sécurisé"
+    documentation: "https://github.com/EthanThePhoenix38/Openclaw"
+    # Sécurité
+    security.openclaw.io/isolation-level: "strict"
+    security.openclaw.io/network-policy: "deny-all-by-default"
+    security.openclaw.io/audit-enabled: "true"
+    # Conformité
+    compliance.openclaw.io/rgpd: "true"
+    compliance.openclaw.io/owasp: "top10-compliant"
+    compliance.openclaw.io/wcag: "2.1-AA"
+---
+# =============================================================================
+# ResourceQuota - Limites de ressources pour le namespace
+# Empêche la surconsommation de ressources
+# =============================================================================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: openclaw-quota
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: resource-quota
+spec:
+  hard:
+    # Limites CPU
+    requests.cpu: "4"
+    limits.cpu: "8"
+    # Limites mémoire
+    requests.memory: "8Gi"
+    limits.memory: "16Gi"
+    # Limites stockage
+    requests.storage: "50Gi"
+    persistentvolumeclaims: "5"
+    # Limites objets
+    pods: "10"
+    services: "5"
+    secrets: "20"
+    configmaps: "10"
+    replicationcontrollers: "5"
+    resourcequotas: "1"
+---
+# =============================================================================
+# LimitRange - Valeurs par défaut pour les containers
+# Applique automatiquement des limites si non spécifiées
+# =============================================================================
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: openclaw-limits
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: limit-range
+spec:
+  limits:
+    # Limites par défaut pour les containers
+    - type: Container
+      default:
+        cpu: "1"
+        memory: "1Gi"
+      defaultRequest:
+        cpu: "250m"
+        memory: "256Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
+    # Limites pour les pods
+    - type: Pod
+      max:
+        cpu: "8"
+        memory: "16Gi"
+    # Limites pour les PVC
+    - type: PersistentVolumeClaim
+      max:
+        storage: "20Gi"
+      min:
+        storage: "100Mi"

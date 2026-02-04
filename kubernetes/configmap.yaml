@@ -1,0 +1,337 @@
+# =============================================================================
+# OpenClaw Kubernetes ConfigMaps
+# Version: 1.0.0
+# Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
+# Description: Configuration d'OpenClaw et du proxy Squid
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-config
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/instance: openclaw-production
+    app.kubernetes.io/version: "2026.1.30"
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: openclaw-stack
+    app: openclaw
+  annotations:
+    description: "Configuration principale OpenClaw Gateway"
+data:
+  # ==========================================================================
+  # Configuration JSON OpenClaw
+  # ==========================================================================
+  openclaw.json: |
+    {
+      "$schema": "https://openclaw.ai/schemas/config.json",
+      "version": "2026.1.30",
+      "gateway": {
+        "host": "0.0.0.0",
+        "port": 18789,
+        "cors": {
+          "enabled": true,
+          "origins": ["http://localhost:*", "http://127.0.0.1:*"]
+        },
+        "rateLimit": {
+          "enabled": true,
+          "maxRequests": 100,
+          "windowMs": 60000
+        }
+      },
+      "security": {
+        "sandboxMode": "non-main",
+        "dmAccess": "pairing",
+        "allowedTools": [
+          "web_search",
+          "code_execution",
+          "file_read",
+          "file_write"
+        ],
+        "blockedTools": [
+          "shell_exec",
+          "network_scan",
+          "system_modify"
+        ],
+        "auditLog": {
+          "enabled": true,
+          "level": "info",
+          "destination": "/tmp/openclaw/audit.log"
+        }
+      },
+      "llm": {
+        "providers": {
+          "ollama": {
+            "enabled": true,
+            "baseUrl": "http://host.docker.internal:11434",
+            "timeout": 120000,
+            "models": {
+              "default": "llama3.1:70b",
+              "fallback": "llama3.1:8b"
+            }
+          },
+          "lmstudio": {
+            "enabled": true,
+            "baseUrl": "http://host.docker.internal:1234",
+            "timeout": 120000
+          },
+          "anthropic": {
+            "enabled": true,
+            "timeout": 60000,
+            "maxTokens": 4096
+          },
+          "openai": {
+            "enabled": false,
+            "timeout": 60000
+          }
+        },
+        "routing": {
+          "strategy": "fallback",
+          "primary": "ollama",
+          "secondary": "anthropic"
+        }
+      },
+      "proxy": {
+        "enabled": true,
+        "http": "http://squid-proxy.openclaw.svc.cluster.local:3128",
+        "https": "http://squid-proxy.openclaw.svc.cluster.local:3128",
+        "noProxy": [
+          "localhost",
+          "127.0.0.1",
+          "host.docker.internal",
+          "*.cluster.local"
+        ]
+      },
+      "logging": {
+        "level": "info",
+        "format": "json",
+        "destination": "/tmp/openclaw",
+        "rotation": {
+          "enabled": true,
+          "maxSize": "100M",
+          "maxFiles": 7
+        }
+      },
+      "metrics": {
+        "enabled": true,
+        "port": 18789,
+        "path": "/metrics",
+        "prometheus": true
+      },
+      "health": {
+        "enabled": true,
+        "path": "/health",
+        "interval": 30000
+      }
+    }
+---
+# =============================================================================
+# ConfigMap Squid Proxy
+# Whitelist stricte des domaines autorisés
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: squid-config
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: squid-proxy
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: openclaw-stack
+    app: squid-proxy
+  annotations:
+    description: "Configuration Squid avec whitelist stricte"
+data:
+  # ==========================================================================
+  # Configuration Squid
+  # IMPORTANT: Seuls les domaines listés sont accessibles !
+  # ==========================================================================
+  squid.conf: |
+    # ===========================================================================
+    # Squid Proxy Configuration - OpenClaw Stack
+    # Version: 1.0.0
+    # Auteur: Ethan Bernier
+    # Description: Proxy avec whitelist stricte pour accès internet contrôlé
+    # ===========================================================================
+
+    # ---------------------------------------------------------------------------
+    # Configuration de base
+    # ---------------------------------------------------------------------------
+    http_port 3128
+    visible_hostname squid-proxy.openclaw.svc.cluster.local
+
+    # ---------------------------------------------------------------------------
+    # ACL - Access Control Lists
+    # ---------------------------------------------------------------------------
+
+    # Ports SSL autorisés
+    acl SSL_ports port 443
+    acl Safe_ports port 80          # HTTP
+    acl Safe_ports port 443         # HTTPS
+    acl CONNECT method CONNECT
+
+    # Réseau local Kubernetes
+    acl localnet src 10.0.0.0/8
+    acl localnet src 172.16.0.0/12
+    acl localnet src 192.168.0.0/16
+
+    # ---------------------------------------------------------------------------
+    # WHITELIST - Domaines autorisés UNIQUEMENT
+    # ---------------------------------------------------------------------------
+
+    # APIs LLM Cloud (si clés API configurées)
+    acl whitelist_llm dstdomain .anthropic.com
+    acl whitelist_llm dstdomain .openai.com
+    acl whitelist_llm dstdomain .googleapis.com
+    acl whitelist_llm dstdomain .azure.com
+
+    # Recherche Web (pour l'outil web_search)
+    acl whitelist_search dstdomain .duckduckgo.com
+    acl whitelist_search dstdomain .searx.org
+    acl whitelist_search dstdomain .brave.com
+
+    # Documentation technique
+    acl whitelist_docs dstdomain .github.com
+    acl whitelist_docs dstdomain .githubusercontent.com
+    acl whitelist_docs dstdomain .npmjs.org
+    acl whitelist_docs dstdomain .pypi.org
+    acl whitelist_docs dstdomain .readthedocs.io
+    acl whitelist_docs dstdomain docs.python.org
+    acl whitelist_docs dstdomain developer.mozilla.org
+    acl whitelist_docs dstdomain .stackoverflow.com
+
+    # Registres de packages (pour mises à jour)
+    acl whitelist_registry dstdomain registry.npmjs.org
+    acl whitelist_registry dstdomain pypi.python.org
+    acl whitelist_registry dstdomain files.pythonhosted.org
+
+    # Hugging Face (modèles)
+    acl whitelist_hf dstdomain .huggingface.co
+    acl whitelist_hf dstdomain cdn-lfs.huggingface.co
+
+    # OpenClaw officiel
+    acl whitelist_openclaw dstdomain .openclaw.ai
+    acl whitelist_openclaw dstdomain docs.openclaw.ai
+
+    # ---------------------------------------------------------------------------
+    # Règles d'accès
+    # ---------------------------------------------------------------------------
+
+    # Interdire les ports non sécurisés
+    http_access deny !Safe_ports
+    http_access deny CONNECT !SSL_ports
+
+    # Autoriser localhost et réseau local
+    http_access allow localhost
+    http_access allow localnet
+
+    # Autoriser UNIQUEMENT les domaines en whitelist
+    http_access allow whitelist_llm
+    http_access allow whitelist_search
+    http_access allow whitelist_docs
+    http_access allow whitelist_registry
+    http_access allow whitelist_hf
+    http_access allow whitelist_openclaw
+
+    # BLOQUER TOUT LE RESTE
+    http_access deny all
+
+    # ---------------------------------------------------------------------------
+    # Cache Configuration
+    # ---------------------------------------------------------------------------
+    cache_mem 128 MB
+    maximum_object_size_in_memory 512 KB
+    cache_dir ufs /var/spool/squid 1000 16 256
+    maximum_object_size 100 MB
+    minimum_object_size 0 KB
+
+    # ---------------------------------------------------------------------------
+    # Logging
+    # ---------------------------------------------------------------------------
+    access_log /var/log/squid/access.log squid
+    cache_log /var/log/squid/cache.log
+    cache_store_log none
+
+    # Format de log personnalisé (pour analyse)
+    logformat openclaw %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
+
+    # ---------------------------------------------------------------------------
+    # Sécurité
+    # ---------------------------------------------------------------------------
+
+    # Cacher la version Squid
+    httpd_suppress_version_string on
+
+    # Désactiver les headers révélateurs
+    via off
+    forwarded_for delete
+    request_header_access X-Forwarded-For deny all
+    request_header_access Via deny all
+
+    # Timeouts
+    connect_timeout 30 seconds
+    read_timeout 60 seconds
+    request_timeout 60 seconds
+
+    # Limites de connexion
+    client_db on
+    client_lifetime 1 day
+
+    # ---------------------------------------------------------------------------
+    # DNS
+    # ---------------------------------------------------------------------------
+    dns_nameservers 8.8.8.8 8.8.4.4 1.1.1.1
+    positive_dns_ttl 6 hours
+    negative_dns_ttl 1 minute
+
+    # ---------------------------------------------------------------------------
+    # Shutdown
+    # ---------------------------------------------------------------------------
+    shutdown_lifetime 10 seconds
+
+    # ---------------------------------------------------------------------------
+    # Refresh Patterns
+    # ---------------------------------------------------------------------------
+    refresh_pattern ^ftp:           1440    20%     10080
+    refresh_pattern ^gopher:        1440    0%      1440
+    refresh_pattern -i (/cgi-bin/|\?) 0     0%      0
+    refresh_pattern .               0       20%     4320
+---
+# =============================================================================
+# ConfigMap pour les variables d'environnement non sensibles
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-env
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: env-config
+    app: openclaw
+  annotations:
+    description: "Variables d'environnement non sensibles"
+data:
+  # Environnement
+  NODE_ENV: "production"
+  TZ: "Europe/Paris"
+
+  # OpenClaw
+  OPENCLAW_PORT: "18789"
+  OPENCLAW_HOST: "0.0.0.0"
+  OPENCLAW_SANDBOX_MODE: "non-main"
+  OPENCLAW_DM_ACCESS: "pairing"
+  OPENCLAW_LOG_LEVEL: "info"
+
+  # LLM Locaux (via host.docker.internal)
+  OLLAMA_HOST: "http://host.docker.internal:11434"
+  LM_STUDIO_HOST: "http://host.docker.internal:1234"
+
+  # Proxy
+  HTTP_PROXY: "http://squid-proxy.openclaw.svc.cluster.local:3128"
+  HTTPS_PROXY: "http://squid-proxy.openclaw.svc.cluster.local:3128"
+  NO_PROXY: "localhost,127.0.0.1,host.docker.internal,.cluster.local"
+
+  # Métriques
+  METRICS_ENABLED: "true"
+  PROMETHEUS_MULTIPROC_DIR: "/tmp/prometheus"

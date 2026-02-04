@@ -1,0 +1,218 @@
+# =============================================================================
+# OpenClaw Kubernetes Services
+# Version: 1.0.0
+# Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
+# Description: Services pour exposer OpenClaw et le proxy Squid
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/instance: openclaw-production
+    app.kubernetes.io/version: "2026.1.30"
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: openclaw-stack
+    app: openclaw
+  annotations:
+    description: "Service principal OpenClaw Gateway"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "18789"
+spec:
+  type: ClusterIP
+  selector:
+    app: openclaw
+    app.kubernetes.io/name: openclaw
+  ports:
+    - name: http
+      port: 18789
+      targetPort: 18789
+      protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+---
+# =============================================================================
+# Service NodePort pour accès externe (optionnel)
+# Utiliser uniquement si besoin d'accès depuis le réseau local
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw-external
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: service-external
+    app: openclaw
+  annotations:
+    description: "Service externe OpenClaw (accès réseau local)"
+spec:
+  type: NodePort
+  selector:
+    app: openclaw
+    app.kubernetes.io/name: openclaw
+  ports:
+    - name: http
+      port: 18789
+      targetPort: 18789
+      nodePort: 31789
+      protocol: TCP
+---
+# =============================================================================
+# Service Squid Proxy (pour whitelist internet)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: squid-proxy
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: squid-proxy
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/part-of: openclaw-stack
+    app: squid-proxy
+  annotations:
+    description: "Proxy Squid avec whitelist pour accès internet contrôlé"
+spec:
+  type: ClusterIP
+  selector:
+    app: squid-proxy
+  ports:
+    - name: http-proxy
+      port: 3128
+      targetPort: 3128
+      protocol: TCP
+---
+# =============================================================================
+# Deployment Squid Proxy
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: squid-proxy
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: squid-proxy
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/part-of: openclaw-stack
+    app: squid-proxy
+  annotations:
+    description: "Proxy Squid pour contrôle d'accès internet"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: squid-proxy
+  template:
+    metadata:
+      labels:
+        app: squid-proxy
+        app.kubernetes.io/name: squid-proxy
+    spec:
+      serviceAccountName: squid-proxy-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: squid
+          image: ubuntu/squid:5.7-23.04_beta
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-proxy
+              containerPort: 3128
+              protocol: TCP
+          volumeMounts:
+            - name: squid-config
+              mountPath: /etc/squid/squid.conf
+              subPath: squid.conf
+              readOnly: true
+            - name: squid-cache
+              mountPath: /var/spool/squid
+            - name: squid-logs
+              mountPath: /var/log/squid
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 3128
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 3128
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: squid-config
+          configMap:
+            name: squid-config
+        - name: squid-cache
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: squid-logs
+          emptyDir:
+            sizeLimit: 500Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+# =============================================================================
+# ServiceAccount pour Squid Proxy
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: squid-proxy-sa
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: squid-proxy
+    app.kubernetes.io/component: service-account
+automountServiceAccountToken: false
+---
+# =============================================================================
+# Headless Service pour DNS interne (optionnel)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw-headless
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: service-headless
+    app: openclaw
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: openclaw
+  ports:
+    - name: http
+      port: 18789
+      targetPort: 18789

@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OpenClaw - Complete deployment guide for Mac, Windows & Linux with Kubernetes">
+    <meta name="author" content="Ethan Bernier">
+    <meta name="keywords" content="OpenClaw, Kubernetes, Mac Studio, M3 Ultra, Docker, Ollama, LM Studio, AI, Assistant, Windows, Linux, WSL">
+    <meta property="og:title" content="OpenClaw - Multi-Platform Deployment Guide">
+    <meta property="og:description" content="Deploy OpenClaw AI Assistant on Mac, Windows or Linux with Kubernetes">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://github.com/EthanThePhoenix38/Openclaw">
+    <title>OpenClaw - Guide de Déploiement | Deployment Guide</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-sidebar: #1a1a2e;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-sidebar: #ecf0f1;
+            --accent: #e63946;
+            --accent-hover: #c1121f;
+            --accent-secondary: #457b9d;
+            --border: #e1e4e8;
+            --code-bg: #f6f8fa;
+            --success: #2a9d8f;
+            --warning: #e9c46a;
+            --danger: #e76f51;
+            --gradient-start: #e63946;
+            --gradient-end: #457b9d;
+        }
+        [data-theme="dark"] {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-sidebar: #010409;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-sidebar: #e6edf3;
+            --accent: #ff6b6b;
+            --accent-hover: #ee5a5a;
+            --accent-secondary: #4ecdc4;
+            --border: #30363d;
+            --code-bg: #161b22;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.7;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--accent);
+            color: white;
+            padding: 8px 16px;
+            z-index: 100;
+            border-radius: 0 0 8px 0;
+        }
+        .skip-link:focus { top: 0; }
+
+        /* Logo SVG */
+        .logo-container {
+            padding: 25px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        }
+        .logo-svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 10px;
+        }
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .logo-tagline {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.8);
+            margin-top: 5px;
+        }
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-top: 8px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: var(--bg-sidebar);
+            color: var(--text-sidebar);
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 50;
+        }
+        .nav-section {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.5;
+            font-weight: 600;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px 10px 25px;
+            color: var(--text-sidebar);
+            text-decoration: none;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .nav-link:hover, .nav-link:focus {
+            background: rgba(255,255,255,0.05);
+            border-left-color: var(--accent);
+        }
+        .nav-link.active {
+            background: rgba(230, 57, 70, 0.2);
+            border-left-color: var(--accent);
+            color: var(--accent);
+        }
+        .nav-link .icon { font-size: 1.1rem; }
+
+        /* Platform selector in sidebar */
+        .platform-selector {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .platform-selector-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            margin-bottom: 10px;
+        }
+        .platform-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .platform-btn {
+            flex: 1;
+            padding: 8px 5px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: var(--text-sidebar);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .platform-btn:hover { background: rgba(255,255,255,0.1); }
+        .platform-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        .platform-btn .platform-icon { font-size: 1.2rem; }
+
+        .main-content {
+            flex: 1;
+            margin-left: 300px;
+            padding: 40px 60px;
+            max-width: 1000px;
+        }
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 300px;
+            right: 0;
+            height: 60px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 40;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 15px;
+            width: 280px;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-left: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-icon {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .lang-switch {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .lang-btn {
+            padding: 6px 14px;
+            border: none;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+        .content-area { margin-top: 80px; }
+        .chapter {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .chapter.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 { color: var(--text-primary); margin: 1.8em 0 0.6em; font-weight: 600; }
+        h1 {
+            font-size: 2.2rem;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        h2 { font-size: 1.6rem; color: var(--accent-secondary); }
+        h3 { font-size: 1.25rem; }
+        p { margin: 1em 0; color: var(--text-secondary); }
+        ul, ol { margin: 1em 0; padding-left: 25px; color: var(--text-secondary); }
+        li { margin: 0.5em 0; }
+        a { color: var(--accent); }
+        code {
+            background: var(--code-bg);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', Monaco, Consolas, monospace;
+            font-size: 0.88em;
+            border: 1px solid var(--border);
+        }
+        pre {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        pre::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        pre code { background: none; padding: 0; border: none; }
+
+        /* Alerts */
+        .alert {
+            padding: 18px 22px;
+            border-radius: 10px;
+            margin: 1.5em 0;
+            border-left: 4px solid;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        .alert-icon { font-size: 1.3rem; }
+        .alert-info { background: rgba(69, 123, 157, 0.1); border-color: var(--accent-secondary); }
+        .alert-warning { background: rgba(233, 196, 106, 0.15); border-color: var(--warning); }
+        .alert-danger { background: rgba(231, 111, 81, 0.1); border-color: var(--danger); }
+        .alert-success { background: rgba(42, 157, 143, 0.1); border-color: var(--success); }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        tr:hover { background: var(--bg-secondary); }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 2em 0;
+        }
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        .card h4 {
+            margin: 0 0 10px;
+            font-size: 1.1rem;
+        }
+        .card p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Platform-specific content */
+        .platform-content { display: none; }
+        .platform-content.active { display: block; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin: 1.5em 0 0;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: var(--text-primary); }
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .tab-content { display: none; padding: 20px 0; }
+        .tab-content.active { display: block; }
+
+        /* Mermaid diagrams */
+        .mermaid {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 2em 0;
+            text-align: center;
+        }
+
+        /* Donation & Promo Section */
+        .promo-section {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 35px;
+            border-radius: 16px;
+            margin: 3em 0;
+            text-align: center;
+        }
+        .promo-section h3 {
+            color: white;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        .promo-section p {
+            color: rgba(255,255,255,0.9);
+            max-width: 600px;
+            margin: 15px auto;
+        }
+        .promo-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .promo-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: white;
+            color: var(--accent);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .promo-links a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .promo-links a.github { background: #24292e; color: white; }
+        .promo-links a.paypal { background: #003087; color: white; }
+        .promo-links a.kofi { background: #ff5e5b; color: white; }
+
+        /* Author box */
+        .author-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 2em 0;
+            border: 1px solid var(--border);
+        }
+        .author-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+        .author-info h4 { margin: 0 0 5px; }
+        .author-info p { margin: 0; font-size: 0.9rem; }
+        .author-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .author-links a {
+            padding: 5px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 60px;
+            left: 300px;
+            right: 0;
+            height: 3px;
+            background: var(--bg-secondary);
+            z-index: 39;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        /* Mobile */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 60;
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 25px; }
+            .top-bar { left: 0; padding: 0 60px 0 15px; }
+            .progress-bar { left: 0; }
+            .search-box { width: 180px; }
+            .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+            .card-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.6rem; }
+        }
+        @media print {
+            .sidebar, .top-bar, .mobile-menu-btn, .progress-bar { display: none; }
+            .main-content { margin-left: 0; max-width: 100%; }
+            .chapter { display: block !important; page-break-before: always; }
+        }
+
+        /* i18n content visibility */
+        [data-lang-content="en"] { display: none; }
+        [data-lang="en"] [data-lang-content="en"] { display: block; }
+        [data-lang="en"] [data-lang-content="fr"] { display: none; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Aller au contenu / Skip to content</a>
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+
+    <nav class="sidebar" id="sidebar" role="navigation" aria-label="Navigation">
+        <!-- Logo -->
+        <div class="logo-container">
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="featherGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ffd;stop-opacity:0.9" />
+                    </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="45" fill="rgba(255,255,255,0.1)"/>
+                <path d="M50 15 L65 40 L50 35 L35 40 Z" fill="url(#featherGrad)" opacity="0.9"/>
+                <path d="M35 40 L25 70 L50 55 L50 35 Z" fill="url(#featherGrad)" opacity="0.8"/>
+                <path d="M65 40 L75 70 L50 55 L50 35 Z" fill="url(#featherGrad)" opacity="0.8"/>
+                <path d="M25 70 L40 85 L50 55 Z" fill="url(#featherGrad)" opacity="0.7"/>
+                <path d="M75 70 L60 85 L50 55 Z" fill="url(#featherGrad)" opacity="0.7"/>
+                <circle cx="50" cy="28" r="4" fill="#333"/>
+                <path d="M46 32 Q50 38 54 32" stroke="#ff6b35" stroke-width="2" fill="none"/>
+            </svg>
+            <div class="logo-text">OpenClaw</div>
+            <div class="logo-tagline">Self-Hosted AI Assistant</div>
+            <div class="version-badge">v1.0.0</div>
+        </div>
+
+        <!-- Platform Selector -->
+        <div class="platform-selector">
+            <div class="platform-selector-title" data-lang-content="fr">Plateforme</div>
+            <div class="platform-selector-title" data-lang-content="en">Platform</div>
+            <div class="platform-btns">
+                <button class="platform-btn active" data-platform="mac" title="macOS / Apple Silicon">
+                    <span class="platform-icon">🍎</span>
+                    <span>Mac</span>
+                </button>
+                <button class="platform-btn" data-platform="windows" title="Windows (WSL2)">
+                    <span class="platform-icon">🪟</span>
+                    <span>Windows</span>
+                </button>
+                <button class="platform-btn" data-platform="linux" title="Linux (Ubuntu/Debian)">
+                    <span class="platform-icon">🐧</span>
+                    <span>Linux</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Start</div>
+            <a href="#home" class="nav-link active" data-chapter="home"><span class="icon">🏠</span> <span data-lang-content="fr">Accueil</span><span data-lang-content="en">Home</span></a>
+            <a href="#platforms" class="nav-link" data-chapter="platforms"><span class="icon">💻</span> <span data-lang-content="fr">Plateformes</span><span data-lang-content="en">Platforms</span></a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" data-lang-content="fr">Partie I - Fondations</div>
+            <div class="nav-section-title" data-lang-content="en">Part I - Foundations</div>
+            <a href="#ch01" class="nav-link" data-chapter="ch01"><span class="icon">📖</span> 1. Introduction</a>
+            <a href="#ch02" class="nav-link" data-chapter="ch02"><span class="icon">🏗️</span> 2. Architecture</a>
+            <a href="#ch03" class="nav-link" data-chapter="ch03"><span class="icon">✅</span> 3. <span data-lang-content="fr">Prérequis</span><span data-lang-content="en">Prerequisites</span></a>
+            <a href="#ch04" class="nav-link" data-chapter="ch04"><span class="icon">⚙️</span> 4. Installation</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" data-lang-content="fr">Partie II - Infrastructure</div>
+            <div class="nav-section-title" data-lang-content="en">Part II - Infrastructure</div>
+            <a href="#ch05" class="nav-link" data-chapter="ch05"><span class="icon">🐳</span> 5. Docker</a>
+            <a href="#ch06" class="nav-link" data-chapter="ch06"><span class="icon">☸️</span> 6. Kubernetes</a>
+            <a href="#ch07" class="nav-link" data-chapter="ch07"><span class="icon">🔒</span> 7. <span data-lang-content="fr">Réseau</span><span data-lang-content="en">Network</span></a>
+            <a href="#ch08" class="nav-link" data-chapter="ch08"><span class="icon">💾</span> 8. <span data-lang-content="fr">Stockage</span><span data-lang-content="en">Storage</span></a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Part III - LLM</div>
+            <a href="#ch09" class="nav-link" data-chapter="ch09"><span class="icon">🦙</span> 9. Ollama</a>
+            <a href="#ch10" class="nav-link" data-chapter="ch10"><span class="icon">🎛️</span> 10. LM Studio</a>
+            <a href="#ch11" class="nav-link" data-chapter="ch11"><span class="icon">🧠</span> 11. <span data-lang-content="fr">Modèles</span><span data-lang-content="en">Models</span></a>
+            <a href="#ch12" class="nav-link" data-chapter="ch12"><span class="icon">🔌</span> 12. API</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Part IV - OpenClaw</div>
+            <a href="#ch13" class="nav-link" data-chapter="ch13"><span class="icon">🚀</span> 13. <span data-lang-content="fr">Déploiement</span><span data-lang-content="en">Deployment</span></a>
+            <a href="#ch14" class="nav-link" data-chapter="ch14"><span class="icon">🔧</span> 14. Configuration</a>
+            <a href="#ch15" class="nav-link" data-chapter="ch15"><span class="icon">🛡️</span> 15. <span data-lang-content="fr">Sécurité</span><span data-lang-content="en">Security</span></a>
+            <a href="#ch16" class="nav-link" data-chapter="ch16"><span class="icon">📊</span> 16. Monitoring</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title" data-lang-content="fr">Partie V - Production</div>
+            <div class="nav-section-title" data-lang-content="en">Part V - Production</div>
+            <a href="#ch17" class="nav-link" data-chapter="ch17"><span class="icon">⚡</span> 17. <span data-lang-content="fr">Haute Dispo</span><span data-lang-content="en">High Availability</span></a>
+            <a href="#ch18" class="nav-link" data-chapter="ch18"><span class="icon">💿</span> 18. Backup</a>
+            <a href="#ch19" class="nav-link" data-chapter="ch19"><span class="icon">🔄</span> 19. <span data-lang-content="fr">Mise à Jour</span><span data-lang-content="en">Updates</span></a>
+            <a href="#ch20" class="nav-link" data-chapter="ch20"><span class="icon">🔍</span> 20. <span data-lang-content="fr">Dépannage</span><span data-lang-content="en">Troubleshooting</span></a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Annexes</div>
+            <a href="#annexeA" class="nav-link" data-chapter="annexeA"><span class="icon">📋</span> A. <span data-lang-content="fr">Commandes</span><span data-lang-content="en">Commands</span></a>
+            <a href="#annexeB" class="nav-link" data-chapter="annexeB"><span class="icon">📄</span> B. Manifests</a>
+            <a href="#annexeC" class="nav-link" data-chapter="annexeC"><span class="icon">📜</span> C. Scripts</a>
+            <a href="#annexeD" class="nav-link" data-chapter="annexeD"><span class="icon">📚</span> D. <span data-lang-content="fr">Glossaire</span><span data-lang-content="en">Glossary</span></a>
+        </div>
+    </nav>
+
+    <div class="progress-bar"><div class="progress-bar-fill" id="progress"></div></div>
+
+    <header class="top-bar" role="banner">
+        <div class="search-box">
+            <span>🔍</span>
+            <input type="search" id="search" placeholder="Search..." aria-label="Search documentation">
+        </div>
+        <div class="controls">
+            <div class="lang-switch">
+                <button class="lang-btn active" data-lang="fr" aria-pressed="true">FR</button>
+                <button class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+            </div>
+            <button class="btn btn-icon" onclick="toggleTheme()" aria-label="Toggle theme">🌓</button>
+            <a href="https://github.com/EthanThePhoenix38/OpenclawBook" class="btn btn-primary" target="_blank" rel="noopener">⭐ GitHub</a>
+        </div>
+    </header>
+
+    <main class="main-content" id="main-content" role="main">
+        <div class="content-area">
+            <!-- ==================== HOME ==================== -->
+            <article class="chapter active" id="home-content" data-chapter="home">
+                <!-- French Content -->
+                <div data-lang-content="fr">
+                    <h1>🦅 OpenClaw - Guide de Déploiement</h1>
+
+                    <div class="alert alert-success">
+                        <span class="alert-icon">🎉</span>
+                        <div><strong>Multi-plateforme!</strong> Ce guide couvre le déploiement sur <strong>Mac</strong>, <strong>Windows</strong> et <strong>Linux</strong>. Sélectionnez votre plateforme dans le menu latéral.</div>
+                    </div>
+
+                    <h2>À propos de ce guide</h2>
+                    <p>Guide exhaustif pour déployer OpenClaw, votre assistant IA auto-hébergé, dans un environnement Kubernetes sécurisé. Optimisé pour tirer parti des GPU modernes (Apple Metal, NVIDIA CUDA, AMD ROCm).</p>
+
+                    <!-- Mermaid Architecture Diagram -->
+                    <h3>Architecture Globale</h3>
+                    <div class="mermaid">
+flowchart TB
+    subgraph HOST["🖥️ Machine Hôte"]
+        subgraph NATIVE["Couche Native"]
+            LLM["🦙 Ollama / LM Studio"]
+            GPU["⚡ GPU (Metal/CUDA/ROCm)"]
+            LLM --> GPU
+        end
+        subgraph K8S["☸️ Kubernetes (k3s)"]
+            OC["🦅 OpenClaw Pod"]
+            SQUID["🦑 Squid Proxy"]
+            PROM["📊 Prometheus"]
+            GRAF["📈 Grafana"]
+            OC --> SQUID
+            PROM --> OC
+            GRAF --> PROM
+        end
+        NATIVE <--> |"host.docker.internal"| K8S
+    end
+    USER["👤 Utilisateur"] --> OC
+    SQUID --> |"Whitelist"| INET["🌐 Internet"]
+                    </div>
+
+                    <h3>Plateformes Supportées</h3>
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-icon">🍎</div>
+                            <h4>macOS / Apple Silicon</h4>
+                            <p>M1, M2, M3 (Pro/Max/Ultra). GPU Metal pour accélération LLM native. Configuration recommandée.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">🪟</div>
+                            <h4>Windows + WSL2</h4>
+                            <p>Windows 10/11 avec WSL2 Ubuntu. Support NVIDIA CUDA via Docker Desktop.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">🐧</div>
+                            <h4>Linux</h4>
+                            <p>Ubuntu 22.04+, Debian 12+, RHEL 9+. NVIDIA CUDA ou AMD ROCm supportés.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- English Content -->
+                <div data-lang-content="en">
+                    <h1>🦅 OpenClaw - Deployment Guide</h1>
+
+                    <div class="alert alert-success">
+                        <span class="alert-icon">🎉</span>
+                        <div><strong>Multi-platform!</strong> This guide covers deployment on <strong>Mac</strong>, <strong>Windows</strong> and <strong>Linux</strong>. Select your platform in the sidebar.</div>
+                    </div>
+
+                    <h2>About This Guide</h2>
+                    <p>Comprehensive guide to deploy OpenClaw, your self-hosted AI assistant, in a secure Kubernetes environment. Optimized to leverage modern GPUs (Apple Metal, NVIDIA CUDA, AMD ROCm).</p>
+
+                    <h3>Global Architecture</h3>
+                    <div class="mermaid">
+flowchart TB
+    subgraph HOST["🖥️ Host Machine"]
+        subgraph NATIVE["Native Layer"]
+            LLM["🦙 Ollama / LM Studio"]
+            GPU["⚡ GPU (Metal/CUDA/ROCm)"]
+            LLM --> GPU
+        end
+        subgraph K8S["☸️ Kubernetes (k3s)"]
+            OC["🦅 OpenClaw Pod"]
+            SQUID["🦑 Squid Proxy"]
+            PROM["📊 Prometheus"]
+            GRAF["📈 Grafana"]
+            OC --> SQUID
+            PROM --> OC
+            GRAF --> PROM
+        end
+        NATIVE <--> |"host.docker.internal"| K8S
+    end
+    USER["👤 User"] --> OC
+    SQUID --> |"Whitelist"| INET["🌐 Internet"]
+                    </div>
+
+                    <h3>Supported Platforms</h3>
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-icon">🍎</div>
+                            <h4>macOS / Apple Silicon</h4>
+                            <p>M1, M2, M3 (Pro/Max/Ultra). Metal GPU for native LLM acceleration. Recommended setup.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">🪟</div>
+                            <h4>Windows + WSL2</h4>
+                            <p>Windows 10/11 with WSL2 Ubuntu. NVIDIA CUDA support via Docker Desktop.</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">🐧</div>
+                            <h4>Linux</h4>
+                            <p>Ubuntu 22.04+, Debian 12+, RHEL 9+. NVIDIA CUDA or AMD ROCm supported.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Start - Bilingual -->
+                <h3 data-lang-content="fr">Démarrage Rapide</h3>
+                <h3 data-lang-content="en">Quick Start</h3>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="qs-mac">🍎 macOS</button>
+                    <button class="tab" data-tab="qs-windows">🪟 Windows</button>
+                    <button class="tab" data-tab="qs-linux">🐧 Linux</button>
+                </div>
+                <div class="tab-content active" id="qs-mac">
+                    <pre data-lang="bash"><code># Clone repository
+git clone https://github.com/EthanThePhoenix38/Openclaw.git && cd Openclaw
+
+# Install Homebrew dependencies
+brew install kubectl helm k3d
+
+# Install k3s via k3d
+k3d cluster create openclaw --api-port 6550 -p "8080:80@loadbalancer"
+
+# Deploy OpenClaw
+./scripts/deploy-openclaw.sh
+
+# Install Ollama (native for Metal GPU)
+brew install ollama && ollama serve &
+ollama pull llama3.1:70b</code></pre>
+                </div>
+                <div class="tab-content" id="qs-windows">
+                    <pre data-lang="powershell"><code># Enable WSL2 (PowerShell Admin)
+wsl --install -d Ubuntu-22.04
+
+# In WSL2 Ubuntu terminal:
+sudo apt update && sudo apt install -y curl git
+
+# Clone repository
+git clone https://github.com/EthanThePhoenix38/Openclaw.git && cd Openclaw
+
+# Install k3s
+curl -sfL https://get.k3s.io | sh -
+
+# Install Ollama (with CUDA if NVIDIA GPU)
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.1:70b
+
+# Deploy OpenClaw
+./scripts/deploy-openclaw.sh</code></pre>
+                </div>
+                <div class="tab-content" id="qs-linux">
+                    <pre data-lang="bash"><code># Clone repository
+git clone https://github.com/EthanThePhoenix38/Openclaw.git && cd Openclaw
+
+# Install k3s
+curl -sfL https://get.k3s.io | sh -
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.1:70b
+
+# Deploy OpenClaw
+./scripts/deploy-openclaw.sh</code></pre>
+                </div>
+
+                <!-- Security Flow Diagram -->
+                <h3 data-lang-content="fr">Flux de Sécurité</h3>
+                <h3 data-lang-content="en">Security Flow</h3>
+                <div class="mermaid">
+flowchart LR
+    subgraph EXTERNAL["🌐 External"]
+        USER["👤 User"]
+        INET["Internet"]
+    end
+    subgraph CLUSTER["☸️ Kubernetes Cluster"]
+        direction TB
+        ING["🚪 Ingress\n(TLS)"]
+        NP["🛡️ NetworkPolicy\n(Zero-Trust)"]
+        OC["🦅 OpenClaw"]
+        SQUID["🦑 Squid Proxy\n(Whitelist)"]
+        LLM["🦙 LLM API"]
+    end
+    USER -->|"HTTPS"| ING
+    ING --> NP
+    NP --> OC
+    OC -->|"Internal"| LLM
+    OC -->|"Filtered"| SQUID
+    SQUID -->|"Whitelist only"| INET
+    style NP fill:#e63946,color:#fff
+    style SQUID fill:#457b9d,color:#fff
+                </div>
+
+                <!-- Author & Promotion -->
+                <div class="author-box">
+                    <div class="author-avatar">EB</div>
+                    <div class="author-info">
+                        <h4>Ethan Bernier</h4>
+                        <p data-lang-content="fr">Développeur & Auteur de ce guide</p>
+                        <p data-lang-content="en">Developer & Author of this guide</p>
+                        <div class="author-links">
+                            <a href="https://github.com/EthanThePhoenix38" target="_blank">🐙 GitHub</a>
+                            <a href="https://orcid.org/0009-0008-9839-5763" target="_blank">🆔 ORCID</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="promo-section">
+                    <h3 data-lang-content="fr">💖 Soutenir ce Projet</h3>
+                    <h3 data-lang-content="en">💖 Support This Project</h3>
+                    <p data-lang-content="fr">Ce guide est 100% gratuit et open-source. Si vous le trouvez utile, envisagez de faire un don ou de mettre une ⭐ sur GitHub!</p>
+                    <p data-lang-content="en">This guide is 100% free and open-source. If you find it useful, consider donating or starring ⭐ on GitHub!</p>
+                    <div class="promo-links">
+                        <a href="https://github.com/EthanThePhoenix38/Openclaw" class="github" target="_blank">⭐ Star on GitHub</a>
+                        <a href="https://paypal.me/VanessaBernier" class="paypal" target="_blank">💳 PayPal</a>
+                        <a href="https://ko-fi.com/EthanThePhoenix" class="kofi" target="_blank">☕ Ko-fi</a>
+                    </div>
+                </div>
+
+                <!-- Requirements Table -->
+                <h3 data-lang-content="fr">Prérequis Système</h3>
+                <h3 data-lang-content="en">System Requirements</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>🍎 macOS</th>
+                            <th>🪟 Windows</th>
+                            <th>🐧 Linux</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>OS Version</td>
+                            <td>14.0+ Sonoma</td>
+                            <td>10 21H2+ / 11</td>
+                            <td>Ubuntu 22.04+</td>
+                        </tr>
+                        <tr>
+                            <td>RAM</td>
+                            <td colspan="3">32GB min (64GB+ <span data-lang-content="fr">recommandé</span><span data-lang-content="en">recommended</span>)</td>
+                        </tr>
+                        <tr>
+                            <td>Storage</td>
+                            <td colspan="3">100GB+ SSD</td>
+                        </tr>
+                        <tr>
+                            <td>GPU</td>
+                            <td>Apple Silicon</td>
+                            <td>NVIDIA (CUDA)</td>
+                            <td>NVIDIA/AMD</td>
+                        </tr>
+                        <tr>
+                            <td>Container</td>
+                            <td>Docker Desktop / Colima</td>
+                            <td>Docker Desktop + WSL2</td>
+                            <td>Docker / Podman</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </article>
+
+            <!-- ==================== PLATFORMS ==================== -->
+            <article class="chapter" id="platforms-content" data-chapter="platforms">
+                <h1 data-lang-content="fr">💻 Guide Multi-Plateforme</h1>
+                <h1 data-lang-content="en">💻 Multi-Platform Guide</h1>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="plat-mac">🍎 macOS</button>
+                    <button class="tab" data-tab="plat-windows">🪟 Windows</button>
+                    <button class="tab" data-tab="plat-linux">🐧 Linux</button>
+                </div>
+
+                <!-- macOS Tab -->
+                <div class="tab-content active" id="plat-mac">
+                    <h2>macOS / Apple Silicon</h2>
+                    <div class="alert alert-info">
+                        <span class="alert-icon">🍎</span>
+                        <div data-lang-content="fr">Configuration optimale pour les puces M1/M2/M3. Le GPU Metal offre d'excellentes performances pour les LLM.</div>
+                        <div data-lang-content="en">Optimal configuration for M1/M2/M3 chips. Metal GPU provides excellent LLM performance.</div>
+                    </div>
+
+                    <div class="mermaid">
+flowchart TB
+    subgraph MAC["🍎 Mac (Apple Silicon)"]
+        subgraph NATIVE["macOS Native"]
+            OLLAMA["🦙 Ollama"]
+            METAL["⚡ GPU Metal"]
+            OLLAMA --> METAL
+        end
+        subgraph DOCKER["🐳 Docker Desktop"]
+            K3D["☸️ k3d Cluster"]
+            subgraph PODS["Pods"]
+                OC["🦅 OpenClaw"]
+                SQ["🦑 Squid"]
+            end
+        end
+        K3D --> PODS
+        OC -->|"host.docker.internal:11434"| OLLAMA
+    end
+                    </div>
+
+                    <h3 data-lang-content="fr">Installation Détaillée</h3>
+                    <h3 data-lang-content="en">Detailed Installation</h3>
+                    <pre data-lang="bash"><code># 1. Install Homebrew (if not installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Install Docker Desktop
+brew install --cask docker
+
+# 3. Install CLI tools
+brew install kubectl helm k3d git
+
+# 4. Create k3d cluster
+k3d cluster create openclaw \
+    --api-port 6550 \
+    -p "8080:80@loadbalancer" \
+    -p "8443:443@loadbalancer" \
+    --agents 2
+
+# 5. Install Ollama (native Metal acceleration)
+brew install ollama
+ollama serve &  # Start in background
+
+# 6. Pull LLM model
+ollama pull llama3.1:70b
+
+# 7. Clone and deploy OpenClaw
+git clone https://github.com/EthanThePhoenix38/Openclaw.git
+cd Openclaw
+./scripts/deploy-openclaw.sh</code></pre>
+                </div>
+
+                <!-- Windows Tab -->
+                <div class="tab-content" id="plat-windows">
+                    <h2>Windows + WSL2</h2>
+                    <div class="alert alert-warning">
+                        <span class="alert-icon">⚠️</span>
+                        <div data-lang-content="fr">Windows nécessite WSL2 avec une distribution Ubuntu. Le support GPU NVIDIA nécessite Docker Desktop avec le backend WSL2.</div>
+                        <div data-lang-content="en">Windows requires WSL2 with an Ubuntu distribution. NVIDIA GPU support requires Docker Desktop with WSL2 backend.</div>
+                    </div>
+
+                    <div class="mermaid">
+flowchart TB
+    subgraph WIN["🪟 Windows 11"]
+        subgraph WSL["WSL2 Ubuntu"]
+            K3S["☸️ k3s"]
+            OLLAMA["🦙 Ollama"]
+            subgraph PODS["Pods"]
+                OC["🦅 OpenClaw"]
+                SQ["🦑 Squid"]
+            end
+        end
+        subgraph NATIVE["Windows Native"]
+            NVIDIA["🎮 NVIDIA Driver"]
+            CUDA["⚡ CUDA"]
+        end
+        NVIDIA --> WSL
+        OLLAMA --> CUDA
+        K3S --> PODS
+        OC --> OLLAMA
+    end
+                    </div>
+
+                    <h3 data-lang-content="fr">Installation Détaillée</h3>
+                    <h3 data-lang-content="en">Detailed Installation</h3>
+                    <pre data-lang="powershell"><code># PowerShell (Administrator)
+# 1. Enable WSL2
+wsl --install -d Ubuntu-22.04
+wsl --set-default-version 2
+
+# 2. Install NVIDIA drivers for WSL (if NVIDIA GPU)
+# Download from: https://developer.nvidia.com/cuda/wsl
+
+# 3. Restart and open Ubuntu terminal
+wsl
+
+# In WSL2 Ubuntu:
+# 4. Update system
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git build-essential
+
+# 5. Install k3s
+curl -sfL https://get.k3s.io | sh -
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> ~/.bashrc
+source ~/.bashrc
+
+# 6. Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+ollama serve &
+ollama pull llama3.1:70b
+
+# 7. Clone and deploy
+git clone https://github.com/EthanThePhoenix38/Openclaw.git
+cd Openclaw
+./scripts/deploy-openclaw.sh</code></pre>
+                </div>
+
+                <!-- Linux Tab -->
+                <div class="tab-content" id="plat-linux">
+                    <h2>Linux (Ubuntu/Debian)</h2>
+                    <div class="alert alert-info">
+                        <span class="alert-icon">🐧</span>
+                        <div data-lang-content="fr">Installation native la plus simple. Support complet NVIDIA CUDA et AMD ROCm.</div>
+                        <div data-lang-content="en">Simplest native installation. Full NVIDIA CUDA and AMD ROCm support.</div>
+                    </div>
+
+                    <div class="mermaid">
+flowchart TB
+    subgraph LINUX["🐧 Linux Server"]
+        subgraph KERNEL["Kernel"]
+            NVIDIA["🎮 NVIDIA Driver"]
+            CUDA["⚡ CUDA Toolkit"]
+        end
+        subgraph USERSPACE["User Space"]
+            K3S["☸️ k3s"]
+            OLLAMA["🦙 Ollama"]
+            subgraph PODS["Pods"]
+                OC["🦅 OpenClaw"]
+                SQ["🦑 Squid"]
+                PROM["📊 Monitoring"]
+            end
+        end
+        NVIDIA --> CUDA
+        OLLAMA --> CUDA
+        K3S --> PODS
+        OC --> OLLAMA
+    end
+                    </div>
+
+                    <h3 data-lang-content="fr">Installation Détaillée</h3>
+                    <h3 data-lang-content="en">Detailed Installation</h3>
+                    <pre data-lang="bash"><code># 1. Update system
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git
+
+# 2. (Optional) Install NVIDIA drivers + CUDA
+sudo apt install -y nvidia-driver-535 nvidia-cuda-toolkit
+
+# 3. Install k3s
+curl -sfL https://get.k3s.io | sh -
+sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> ~/.bashrc
+
+# 4. Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+sudo systemctl enable ollama
+sudo systemctl start ollama
+ollama pull llama3.1:70b
+
+# 5. Clone and deploy
+git clone https://github.com/EthanThePhoenix38/Openclaw.git
+cd Openclaw
+./scripts/deploy-openclaw.sh
+
+# 6. Verify
+kubectl get pods -n openclaw</code></pre>
+                </div>
+            </article>
+
+            <!-- ==================== CHAPTER 1 ==================== -->
+            <article class="chapter" id="ch01-content" data-chapter="ch01">
+                <h1 data-lang-content="fr">📖 Chapitre 1 : Introduction à OpenClaw</h1>
+                <h1 data-lang-content="en">📖 Chapter 1: Introduction to OpenClaw</h1>
+
+                <div data-lang-content="fr">
+                    <p>OpenClaw est un assistant IA open-source conçu pour être auto-hébergé. Contrairement aux solutions cloud, vous gardez le contrôle total de vos données et conversations.</p>
+                    <div class="alert alert-info">
+                        <span class="alert-icon">📖</span>
+                        <div>Contenu complet disponible dans <code>docs/fr/partie-1-fondations/chapitre-01-introduction.md</code></div>
+                    </div>
+                </div>
+                <div data-lang-content="en">
+                    <p>OpenClaw is an open-source AI assistant designed to be self-hosted. Unlike cloud solutions, you maintain complete control over your data and conversations.</p>
+                    <div class="alert alert-info">
+                        <span class="alert-icon">📖</span>
+                        <div>Full content available in <code>docs/en/part-1-foundations/chapter-01-introduction.md</code></div>
+                    </div>
+                </div>
+
+                <h3 data-lang-content="fr">Pourquoi OpenClaw?</h3>
+                <h3 data-lang-content="en">Why OpenClaw?</h3>
+                <div class="mermaid">
+mindmap
+  root((OpenClaw))
+    Privacy
+      Data stays local
+      No cloud dependency
+      GDPR compliant
+    Control
+      Choose your LLM
+      Custom prompts
+      Full configuration
+    Performance
+      GPU acceleration
+      Low latency
+      Offline capable
+    Security
+      Zero-Trust network
+      Isolated containers
+      Proxy whitelist
+                </div>
+            </article>
+
+            <!-- ==================== CHAPTER 2 ==================== -->
+            <article class="chapter" id="ch02-content" data-chapter="ch02">
+                <h1 data-lang-content="fr">🏗️ Chapitre 2 : Architecture du Système</h1>
+                <h1 data-lang-content="en">🏗️ Chapter 2: System Architecture</h1>
+
+                <div data-lang-content="fr">
+                    <p>L'architecture OpenClaw sépare le LLM (natif pour l'accès GPU) de l'application (conteneurisée pour l'isolation).</p>
+                </div>
+                <div data-lang-content="en">
+                    <p>The OpenClaw architecture separates the LLM (native for GPU access) from the application (containerized for isolation).</p>
+                </div>
+
+                <h3 data-lang-content="fr">Architecture Détaillée</h3>
+                <h3 data-lang-content="en">Detailed Architecture</h3>
+                <div class="mermaid">
+flowchart TB
+    subgraph CLIENT["👤 Client"]
+        BROWSER["🌐 Browser"]
+        CLI["💻 CLI"]
+    end
+
+    subgraph INGRESS["🚪 Ingress Layer"]
+        TLS["🔐 TLS Termination"]
+        LB["⚖️ Load Balancer"]
+    end
+
+    subgraph K8S["☸️ Kubernetes Cluster"]
+        subgraph APP["Application Tier"]
+            OC1["🦅 OpenClaw-1"]
+            OC2["🦅 OpenClaw-2"]
+        end
+
+        subgraph PROXY["Proxy Tier"]
+            SQ["🦑 Squid Proxy"]
+        end
+
+        subgraph MON["Monitoring"]
+            PROM["📊 Prometheus"]
+            GRAF["📈 Grafana"]
+            ALERT["🚨 Alertmanager"]
+        end
+
+        subgraph STORAGE["💾 Storage"]
+            PVC["📁 PersistentVolume"]
+            SEC["🔑 Secrets"]
+            CM["📋 ConfigMap"]
+        end
+    end
+
+    subgraph NATIVE["🖥️ Native Layer"]
+        OLLAMA["🦙 Ollama API"]
+        GPU["⚡ GPU"]
+    end
+
+    CLIENT --> INGRESS
+    INGRESS --> APP
+    APP --> PROXY
+    APP --> NATIVE
+    PROXY --> INET["🌐 Internet"]
+    MON --> APP
+    APP --> STORAGE
+    OLLAMA --> GPU
+                </div>
+
+                <h3 data-lang-content="fr">Flux de Données</h3>
+                <h3 data-lang-content="en">Data Flow</h3>
+                <div class="mermaid">
+sequenceDiagram
+    participant U as 👤 User
+    participant I as 🚪 Ingress
+    participant O as 🦅 OpenClaw
+    participant L as 🦙 Ollama
+    participant G as ⚡ GPU
+    participant S as 🦑 Squid
+    participant W as 🌐 Web
+
+    U->>I: HTTPS Request
+    I->>O: Route to Pod
+    O->>L: LLM Query (host.docker.internal)
+    L->>G: GPU Inference
+    G-->>L: Response
+    L-->>O: Generated Text
+
+    alt Web Search Required
+        O->>S: HTTP Request
+        S->>S: Check Whitelist
+        S->>W: Allowed Domain
+        W-->>S: Response
+        S-->>O: Filtered Response
+    end
+
+    O-->>I: JSON Response
+    I-->>U: HTTPS Response
+                </div>
+            </article>
+
+            <!-- Remaining chapters with alert pointing to docs -->
+            <article class="chapter" id="ch03-content" data-chapter="ch03">
+                <h1 data-lang-content="fr">✅ Chapitre 3 : Prérequis</h1>
+                <h1 data-lang-content="en">✅ Chapter 3: Prerequisites</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-1-fondations/chapitre-03-prerequis.md</code></div><div data-lang-content="en">See <code>docs/en/part-1-foundations/chapter-03-prerequisites.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch04-content" data-chapter="ch04">
+                <h1 data-lang-content="fr">⚙️ Chapitre 4 : Installation</h1>
+                <h1 data-lang-content="en">⚙️ Chapter 4: Installation</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-1-fondations/chapitre-04-installation-macos.md</code></div><div data-lang-content="en">See <code>docs/en/part-1-foundations/chapter-04-installation.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch05-content" data-chapter="ch05">
+                <h1>🐳 Docker</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-2-infrastructure/chapitre-05-docker.md</code></div><div data-lang-content="en">See <code>docs/en/part-2-infrastructure/chapter-05-docker.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch06-content" data-chapter="ch06">
+                <h1>☸️ Kubernetes k3s</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-2-infrastructure/chapitre-06-kubernetes.md</code></div><div data-lang-content="en">See <code>docs/en/part-2-infrastructure/chapter-06-kubernetes.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch07-content" data-chapter="ch07">
+                <h1 data-lang-content="fr">🔒 Réseau & Sécurité</h1>
+                <h1 data-lang-content="en">🔒 Network & Security</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-2-infrastructure/chapitre-07-reseau-securite.md</code></div><div data-lang-content="en">See <code>docs/en/part-2-infrastructure/chapter-07-network-security.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch08-content" data-chapter="ch08">
+                <h1 data-lang-content="fr">💾 Stockage</h1>
+                <h1 data-lang-content="en">💾 Storage</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-2-infrastructure/chapitre-08-stockage.md</code></div><div data-lang-content="en">See <code>docs/en/part-2-infrastructure/chapter-08-storage.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch09-content" data-chapter="ch09">
+                <h1>🦙 Ollama</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-3-llm/chapitre-09-ollama.md</code></div><div data-lang-content="en">See <code>docs/en/part-3-llm/chapter-09-ollama.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch10-content" data-chapter="ch10">
+                <h1>🎛️ LM Studio</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-3-llm/chapitre-10-lm-studio.md</code></div><div data-lang-content="en">See <code>docs/en/part-3-llm/chapter-10-lm-studio.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch11-content" data-chapter="ch11">
+                <h1 data-lang-content="fr">🧠 Modèles & GPU</h1>
+                <h1 data-lang-content="en">🧠 Models & GPU</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-3-llm/chapitre-11-modeles-metal.md</code></div><div data-lang-content="en">See <code>docs/en/part-3-llm/chapter-11-models-gpu.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch12-content" data-chapter="ch12">
+                <h1>🔌 API LLM</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-3-llm/chapitre-12-api-llm.md</code></div><div data-lang-content="en">See <code>docs/en/part-3-llm/chapter-12-llm-api.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch13-content" data-chapter="ch13">
+                <h1 data-lang-content="fr">🚀 Déploiement OpenClaw</h1>
+                <h1 data-lang-content="en">🚀 OpenClaw Deployment</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-4-openclaw/chapitre-13-deploiement.md</code></div><div data-lang-content="en">See <code>docs/en/part-4-openclaw/chapter-13-deployment.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch14-content" data-chapter="ch14">
+                <h1>🔧 Configuration</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-4-openclaw/chapitre-14-configuration.md</code></div><div data-lang-content="en">See <code>docs/en/part-4-openclaw/chapter-14-configuration.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch15-content" data-chapter="ch15">
+                <h1 data-lang-content="fr">🛡️ Sécurité Avancée</h1>
+                <h1 data-lang-content="en">🛡️ Advanced Security</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-4-openclaw/chapitre-15-securite-avancee.md</code></div><div data-lang-content="en">See <code>docs/en/part-4-openclaw/chapter-15-advanced-security.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch16-content" data-chapter="ch16">
+                <h1>📊 Monitoring</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-4-openclaw/chapitre-16-monitoring.md</code></div><div data-lang-content="en">See <code>docs/en/part-4-openclaw/chapter-16-monitoring.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch17-content" data-chapter="ch17">
+                <h1 data-lang-content="fr">⚡ Haute Disponibilité</h1>
+                <h1 data-lang-content="en">⚡ High Availability</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-5-production/chapitre-17-haute-disponibilite.md</code></div><div data-lang-content="en">See <code>docs/en/part-5-production/chapter-17-high-availability.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch18-content" data-chapter="ch18">
+                <h1>💿 Backup & Recovery</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-5-production/chapitre-18-backup-recovery.md</code></div><div data-lang-content="en">See <code>docs/en/part-5-production/chapter-18-backup-recovery.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch19-content" data-chapter="ch19">
+                <h1 data-lang-content="fr">🔄 Mise à Jour</h1>
+                <h1 data-lang-content="en">🔄 Updates</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-5-production/chapitre-19-mise-a-jour.md</code></div><div data-lang-content="en">See <code>docs/en/part-5-production/chapter-19-updates.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="ch20-content" data-chapter="ch20">
+                <h1 data-lang-content="fr">🔍 Dépannage</h1>
+                <h1 data-lang-content="en">🔍 Troubleshooting</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/partie-5-production/chapitre-20-troubleshooting.md</code></div><div data-lang-content="en">See <code>docs/en/part-5-production/chapter-20-troubleshooting.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="annexeA-content" data-chapter="annexeA">
+                <h1 data-lang-content="fr">📋 Annexe A : Commandes</h1>
+                <h1 data-lang-content="en">📋 Appendix A: Commands</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/annexes/annexe-a-commandes.md</code></div><div data-lang-content="en">See <code>docs/en/appendices/appendix-a-commands.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="annexeB-content" data-chapter="annexeB">
+                <h1>📄 Annexe B : Manifests</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/annexes/annexe-b-manifests.md</code></div><div data-lang-content="en">See <code>docs/en/appendices/appendix-b-manifests.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="annexeC-content" data-chapter="annexeC">
+                <h1>📜 Annexe C : Scripts</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/annexes/annexe-c-scripts.md</code></div><div data-lang-content="en">See <code>docs/en/appendices/appendix-c-scripts.md</code></div></div>
+            </article>
+
+            <article class="chapter" id="annexeD-content" data-chapter="annexeD">
+                <h1 data-lang-content="fr">📚 Annexe D : Glossaire</h1>
+                <h1 data-lang-content="en">📚 Appendix D: Glossary</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <code>docs/fr/annexes/annexe-d-glossaire.md</code></div><div data-lang-content="en">See <code>docs/en/appendices/appendix-d-glossary.md</code></div></div>
+            </article>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+            flowchart: { useMaxWidth: true, htmlLabels: true },
+            securityLevel: 'loose'
+        });
+
+        // Theme management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            // Re-render mermaid with new theme
+            mermaid.initialize({ theme: next === 'dark' ? 'dark' : 'default' });
+            document.querySelectorAll('.mermaid').forEach(el => {
+                const code = el.getAttribute('data-mermaid') || el.textContent;
+                el.setAttribute('data-mermaid', code);
+                el.removeAttribute('data-processed');
+                el.innerHTML = code;
+            });
+            mermaid.init(undefined, '.mermaid');
+        }
+
+        // Load saved theme
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved) document.documentElement.setAttribute('data-theme', saved);
+            else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+
+        // Language management
+        function setLanguage(lang) {
+            document.documentElement.setAttribute('data-lang', lang);
+            localStorage.setItem('lang', lang);
+        }
+        (function() {
+            const saved = localStorage.getItem('lang');
+            if (saved) setLanguage(saved);
+        })();
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-pressed', 'false');
+                });
+                this.classList.add('active');
+                this.setAttribute('aria-pressed', 'true');
+                setLanguage(this.getAttribute('data-lang'));
+            });
+        });
+
+        // Sidebar toggle (mobile)
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Chapter navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const chapter = this.getAttribute('data-chapter');
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.chapter').forEach(c => c.classList.remove('active'));
+                document.getElementById(chapter + '-content').classList.add('active');
+                document.getElementById('sidebar').classList.remove('open');
+                history.pushState(null, '', '#' + chapter);
+                window.scrollTo(0, 0);
+            });
+        });
+
+        // Handle direct URL access
+        window.addEventListener('load', function() {
+            const hash = window.location.hash.slice(1);
+            if (hash) {
+                const link = document.querySelector(`[data-chapter="${hash}"]`);
+                if (link) link.click();
+            }
+        });
+
+        // Progress bar
+        window.addEventListener('scroll', function() {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+
+        // Search
+        document.getElementById('search').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const text = link.textContent.toLowerCase();
+                link.style.display = query.length < 2 || text.includes(query) ? 'flex' : 'none';
+            });
+        });
+
+        // Platform selector
+        document.querySelectorAll('.platform-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const platform = this.getAttribute('data-platform');
+                // Could be used to filter platform-specific content
+                console.log('Platform selected:', platform);
+            });
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabGroup = this.closest('.tabs');
+                const contentId = this.getAttribute('data-tab');
+
+                tabGroup.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Find sibling tab-content elements
+                let sibling = tabGroup.nextElementSibling;
+                while (sibling && sibling.classList.contains('tab-content')) {
+                    sibling.classList.remove('active');
+                    if (sibling.id === contentId) sibling.classList.add('active');
+                    sibling = sibling.nextElementSibling;
+                }
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

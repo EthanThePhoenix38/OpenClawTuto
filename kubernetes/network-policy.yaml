@@ -1,0 +1,365 @@
+# =============================================================================
+# OpenClaw Kubernetes Network Policies
+# Version: 1.0.0
+# Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
+# Description: Policies réseau Zero-Trust pour isolation maximale
+# =============================================================================
+#
+# ARCHITECTURE RÉSEAU
+# ===================
+#
+#   ┌─────────────────────────────────────────────────────────────────────┐
+#   │                        NAMESPACE: openclaw                          │
+#   │                                                                     │
+#   │  ┌─────────────┐      ┌─────────────┐      ┌─────────────────────┐ │
+#   │  │  OpenClaw   │─────▶│ Squid Proxy │─────▶│   Internet          │ │
+#   │  │   :18789    │      │    :3128    │      │  (whitelist only)   │ │
+#   │  └──────┬──────┘      └─────────────┘      └─────────────────────┘ │
+#   │         │                                                          │
+#   │         │ host.docker.internal                                     │
+#   │         ▼                                                          │
+#   │  ┌─────────────┐                                                   │
+#   │  │   Ollama    │ ◀── Hors K8s (GPU natif Mac)                     │
+#   │  │   :11434    │                                                   │
+#   │  └─────────────┘                                                   │
+#   │                                                                     │
+#   └─────────────────────────────────────────────────────────────────────┘
+#
+# RÈGLES :
+# - DENY ALL par défaut (Zero Trust)
+# - OpenClaw → Squid (port 3128) : AUTORISÉ
+# - OpenClaw → Host (port 11434, 1234) : AUTORISÉ (LLM locaux)
+# - OpenClaw → Prometheus (port 9090) : AUTORISÉ (métriques)
+# - Squid → Internet (whitelist) : AUTORISÉ
+# - Tout le reste : BLOQUÉ
+#
+# =============================================================================
+
+---
+# =============================================================================
+# Policy 1: DENY ALL - Bloquer tout le trafic par défaut
+# C'est la base du Zero Trust
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: deny-all
+  annotations:
+    description: "Bloque tout le trafic entrant et sortant par défaut"
+spec:
+  # S'applique à TOUS les pods du namespace
+  podSelector: {}
+  # Types de trafic concernés
+  policyTypes:
+    - Ingress
+    - Egress
+  # Aucune règle = tout est bloqué
+
+---
+# =============================================================================
+# Policy 2: OpenClaw Ingress - Autoriser le trafic entrant
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openclaw-ingress
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: ingress
+  annotations:
+    description: "Autorise le trafic entrant vers OpenClaw"
+spec:
+  podSelector:
+    matchLabels:
+      app: openclaw
+  policyTypes:
+    - Ingress
+  ingress:
+    # Autoriser depuis le réseau local (pour accès navigateur)
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+        - ipBlock:
+            cidr: 172.16.0.0/12
+        - ipBlock:
+            cidr: 192.168.0.0/16
+        - ipBlock:
+            cidr: 127.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 18789
+    # Autoriser depuis le namespace monitoring (Prometheus scraping)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 18789
+
+---
+# =============================================================================
+# Policy 3: OpenClaw Egress - Contrôler le trafic sortant
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openclaw-egress
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: egress
+  annotations:
+    description: "Contrôle strict du trafic sortant d'OpenClaw"
+spec:
+  podSelector:
+    matchLabels:
+      app: openclaw
+  policyTypes:
+    - Egress
+  egress:
+    # 1. DNS (indispensable)
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # 2. Squid Proxy (pour accès internet contrôlé)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: squid-proxy
+      ports:
+        - protocol: TCP
+          port: 3128
+
+    # 3. Ollama sur le host (LLM local avec GPU)
+    # host.docker.internal résolu vers le host Mac
+    - to:
+        - ipBlock:
+            # Docker Desktop host gateway
+            cidr: 192.168.65.0/24
+        - ipBlock:
+            # Rancher Desktop / Lima
+            cidr: 192.168.5.0/24
+        - ipBlock:
+            # Localhost via host networking
+            cidr: 127.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 11434  # Ollama
+
+    # 4. LM Studio sur le host
+    - to:
+        - ipBlock:
+            cidr: 192.168.65.0/24
+        - ipBlock:
+            cidr: 192.168.5.0/24
+        - ipBlock:
+            cidr: 127.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 1234   # LM Studio
+
+    # 5. Communication intra-namespace (si plusieurs replicas)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openclaw
+      ports:
+        - protocol: TCP
+          port: 18789
+
+---
+# =============================================================================
+# Policy 4: Squid Proxy Ingress - Autoriser depuis OpenClaw uniquement
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: squid-ingress
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: squid-proxy
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: proxy-ingress
+  annotations:
+    description: "Squid accepte uniquement les connexions d'OpenClaw"
+spec:
+  podSelector:
+    matchLabels:
+      app: squid-proxy
+  policyTypes:
+    - Ingress
+  ingress:
+    # UNIQUEMENT depuis les pods OpenClaw
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openclaw
+      ports:
+        - protocol: TCP
+          port: 3128
+
+---
+# =============================================================================
+# Policy 5: Squid Proxy Egress - Accès Internet (ports 80/443 uniquement)
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: squid-egress
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: squid-proxy
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: proxy-egress
+  annotations:
+    description: "Squid peut accéder à Internet (whitelist gérée par Squid)"
+spec:
+  podSelector:
+    matchLabels:
+      app: squid-proxy
+  policyTypes:
+    - Egress
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Internet (HTTP/HTTPS)
+    # La whitelist des domaines est gérée par Squid lui-même
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              # Bloquer les réseaux privés (sauf exceptions)
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+
+---
+# =============================================================================
+# Policy 6: Monitoring - Autoriser Prometheus à scraper
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: monitoring
+  annotations:
+    description: "Autorise Prometheus à collecter les métriques"
+spec:
+  podSelector:
+    matchLabels:
+      app: openclaw
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 18789
+
+---
+# =============================================================================
+# Policy 7: Init Container - Autoriser vérification Ollama
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: init-container-egress
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: network-policy
+    security.openclaw.io/policy: init
+  annotations:
+    description: "Autorise l'init container à vérifier Ollama"
+spec:
+  podSelector:
+    matchLabels:
+      app: openclaw
+  policyTypes:
+    - Egress
+  egress:
+    # Permettre la vérification d'Ollama au démarrage
+    - to:
+        - ipBlock:
+            cidr: 192.168.65.0/24
+        - ipBlock:
+            cidr: 192.168.5.0/24
+        - ipBlock:
+            cidr: 127.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 11434
+
+---
+# =============================================================================
+# VÉRIFICATION DES POLICIES
+# =============================================================================
+#
+# 1. Lister toutes les policies :
+#    kubectl get networkpolicies -n openclaw
+#
+# 2. Décrire une policy :
+#    kubectl describe networkpolicy deny-all -n openclaw
+#
+# 3. Tester la connectivité (depuis un pod OpenClaw) :
+#
+#    # Doit RÉUSSIR : Squid proxy
+#    kubectl exec -it <pod> -n openclaw -- nc -zv squid-proxy 3128
+#
+#    # Doit RÉUSSIR : Ollama (si host accessible)
+#    kubectl exec -it <pod> -n openclaw -- nc -zv host.docker.internal 11434
+#
+#    # Doit ÉCHOUER : Internet direct
+#    kubectl exec -it <pod> -n openclaw -- nc -zv google.com 443
+#
+#    # Doit RÉUSSIR : Internet via proxy (si domaine whitelisté)
+#    kubectl exec -it <pod> -n openclaw -- \
+#      curl -x http://squid-proxy:3128 https://api.anthropic.com
+#
+# 4. Logs des connexions bloquées (si Calico) :
+#    kubectl logs -n calico-system -l k8s-app=calico-node | grep DENY
+#
+# =============================================================================

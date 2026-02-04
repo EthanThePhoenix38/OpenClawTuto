@@ -1,0 +1,358 @@
+# =============================================================================
+# OpenClaw Docker Compose
+# Version: 1.0.0
+# Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
+# Description: Stack complète pour développement local
+# =============================================================================
+#
+# USAGE :
+#   docker compose up -d          # Démarrer tous les services
+#   docker compose up openclaw    # Démarrer OpenClaw uniquement
+#   docker compose logs -f        # Voir les logs
+#   docker compose down           # Arrêter tout
+#   docker compose down -v        # Arrêter + supprimer volumes
+#
+# PRÉREQUIS :
+#   - Docker Desktop (Mac/Windows) ou Docker Engine (Linux)
+#   - Ollama installé NATIVEMENT sur le host (pas dans Docker)
+#   - 8 Go RAM minimum alloués à Docker
+#
+# =============================================================================
+
+name: openclaw-stack
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+services:
+  # ---------------------------------------------------------------------------
+  # OpenClaw Gateway - Service principal
+  # ---------------------------------------------------------------------------
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:2026.1.30
+    # Ou build local :
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   target: production
+    container_name: openclaw
+    hostname: openclaw
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Ports
+    ports:
+      - "18789:18789"
+
+    # Variables d'environnement
+    environment:
+      - NODE_ENV=production
+      - OPENCLAW_PORT=18789
+      - OPENCLAW_HOST=0.0.0.0
+      - OPENCLAW_SANDBOX_MODE=non-main
+      - OPENCLAW_DM_ACCESS=pairing
+      - OPENCLAW_LOG_LEVEL=info
+      # LLM locaux (via host.docker.internal)
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - LM_STUDIO_HOST=http://host.docker.internal:1234
+      # Proxy (si squid activé)
+      - HTTP_PROXY=http://squid:3128
+      - HTTPS_PROXY=http://squid:3128
+      - NO_PROXY=localhost,127.0.0.1,host.docker.internal
+      # API Keys (depuis fichier .env)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # Timezone
+      - TZ=Europe/Paris
+
+    # Volumes
+    volumes:
+      # Configuration
+      - ./config/openclaw.json:/home/openclaw/.openclaw/openclaw.json:ro
+      # Données persistantes
+      - openclaw-data:/home/openclaw/.openclaw
+      # Logs
+      - openclaw-logs:/var/log/openclaw
+      # Tmp (pour fichiers temporaires)
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 1073741824  # 1 Go
+
+    # Sécurité
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: false  # OpenClaw a besoin d'écrire
+    user: "1000:1000"
+
+    # Ressources
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18789/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Dépendances
+    depends_on:
+      squid:
+        condition: service_healthy
+
+    # Réseau
+    networks:
+      - openclaw-network
+
+    # Labels
+    labels:
+      - "com.openclaw.service=gateway"
+      - "com.openclaw.version=2026.1.30"
+      - "traefik.enable=false"
+
+  # ---------------------------------------------------------------------------
+  # Squid Proxy - Whitelist internet
+  # ---------------------------------------------------------------------------
+  squid:
+    image: ubuntu/squid:5.7-23.04_beta
+    container_name: squid-proxy
+    hostname: squid
+
+    restart: unless-stopped
+
+    # Ports (optionnel - uniquement pour debug)
+    # ports:
+    #   - "3128:3128"
+
+    # Volumes
+    volumes:
+      - ./config/squid.conf:/etc/squid/squid.conf:ro
+      - squid-cache:/var/spool/squid
+      - squid-logs:/var/log/squid
+
+    # Sécurité
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    user: "1000:1000"
+
+    # Ressources
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3128 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Réseau
+    networks:
+      - openclaw-network
+
+    # Labels
+    labels:
+      - "com.openclaw.service=proxy"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus - Métriques (optionnel)
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    hostname: prometheus
+
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+    # Ports
+    ports:
+      - "9090:9090"
+
+    # Volumes
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+    # Commande
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+
+    # Sécurité
+    security_opt:
+      - no-new-privileges:true
+    user: "65534:65534"  # nobody
+
+    # Ressources
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+    # Réseau
+    networks:
+      - openclaw-network
+
+    # Labels
+    labels:
+      - "com.openclaw.service=monitoring"
+
+  # ---------------------------------------------------------------------------
+  # Grafana - Dashboards (optionnel)
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    hostname: grafana
+
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+    # Ports
+    ports:
+      - "3000:3000"
+
+    # Variables d'environnement
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+
+    # Volumes
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+
+    # Sécurité
+    security_opt:
+      - no-new-privileges:true
+    user: "472:472"
+
+    # Ressources
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+    # Dépendances
+    depends_on:
+      - prometheus
+
+    # Réseau
+    networks:
+      - openclaw-network
+
+    # Labels
+    labels:
+      - "com.openclaw.service=dashboards"
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  openclaw-network:
+    name: openclaw-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    labels:
+      - "com.openclaw.network=internal"
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  # OpenClaw
+  openclaw-data:
+    name: openclaw-data
+    labels:
+      - "com.openclaw.volume=data"
+
+  openclaw-logs:
+    name: openclaw-logs
+    labels:
+      - "com.openclaw.volume=logs"
+
+  # Squid
+  squid-cache:
+    name: squid-cache
+    labels:
+      - "com.openclaw.volume=proxy-cache"
+
+  squid-logs:
+    name: squid-logs
+    labels:
+      - "com.openclaw.volume=proxy-logs"
+
+  # Monitoring
+  prometheus-data:
+    name: prometheus-data
+    labels:
+      - "com.openclaw.volume=metrics"
+
+  grafana-data:
+    name: grafana-data
+    labels:
+      - "com.openclaw.volume=dashboards"
+
+# =============================================================================
+# NOTES D'UTILISATION
+# =============================================================================
+#
+# 1. PREMIER DÉMARRAGE :
+#    cp .env.example .env
+#    # Éditer .env avec vos clés API
+#    docker compose up -d
+#
+# 2. AVEC MONITORING :
+#    docker compose --profile monitoring up -d
+#
+# 3. VÉRIFIER L'ÉTAT :
+#    docker compose ps
+#    docker compose logs openclaw
+#
+# 4. ACCÉDER À OPENCLAW :
+#    curl http://localhost:18789/health
+#
+# 5. OLLAMA DOIT TOURNER SUR LE HOST :
+#    ollama serve  # Dans un autre terminal
+#
+# 6. DEBUG :
+#    docker compose exec openclaw sh
+#    docker compose logs -f squid
+#
+# =============================================================================
