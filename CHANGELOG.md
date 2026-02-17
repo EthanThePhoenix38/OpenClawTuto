@@ -5,6 +5,73 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
+## [Unreleased]
+
+### Ajouté
+
+- Chapitres FR:
+  - `book/fr/05-maintenir/04-durcissement-pods-et-orphelins.md`
+  - `book/fr/03-securiser/08-pods-modulaires-networkpolicy-rollback.md`
+- Chapitres EN:
+  - `book/en/05-maintain/04-pod-hardening-and-orphan-cleanup.md`
+  - `book/en/03-secure/08-modular-pods-networkpolicy-and-rollback.md`
+
+### Modifié
+
+- Alignement de nomenclature pods/agents vers une convention stable:
+  - `phoenix-router`
+  - `phoenix-planner`
+  - `phoenix-implementer`
+  - `phoenix-qa`
+  - `phoenix-security`
+  - `phoenix-messaging`
+- `index.html`:
+  - correction des liens de chapitres vers des cibles réelles (`book/fr/*`, `kubernetes/`, `scripts/`)
+  - affichage explicite côté EN: `translation pending` tant que la version FR n'est pas figée
+
+## [2.0.0] - 2026-02-13
+
+### Ajouté
+
+- **Architecture multi-profil** : 3 modes de déploiement exclusifs
+  - 🏠 `local` : Docker simple, LLM locaux, pas de proxy
+  - 🛡️ `k3d` : Docker + Squid proxy whitelist + Prometheus/Grafana (Zero-Trust)
+  - ☁️ `koyeb` : Cloud Koyeb, API keys obligatoires, pas de LLM local
+
+- **Installation one-click** (`scripts/setup.sh`)
+  - Onboarding interactif avec vérification des prérequis
+  - Génération automatique du fichier `.env` sécurisé (chmod 600)
+  - Token gateway généré automatiquement (openssl rand -hex 32)
+  - Lancement automatique de la stack après configuration
+
+- **Fichier `.env.koyeb`** : référence de configuration pour déploiement cloud Koyeb
+
+- **Support API supplémentaires** : Google AI (Gemini), Mistral AI
+
+### Sécurité
+
+- ⚠️ **Patch CVE-2026-25253** (CSRF → RCE, CVSS 8.8) : image minimale 2026.1.29
+- **Token d'authentification gateway obligatoire** (`OPENCLAW_AUTH_MODE=token`)
+- **Bind localhost** (`127.0.0.1`) par défaut pour modes local et k3d
+- **mDNS désactivé** en production (`OPENCLAW_MDNS_MODE=off`)
+- **Control UI sécurisé** (`OPENCLAW_CONTROL_UI_INSECURE_AUTH=false`)
+- **Sandbox per-agent** (`OPENCLAW_SANDBOX_SCOPE=agent`)
+- **PID limits** (256) : protection anti fork-bomb
+- **Filesystem read-only** avec tmpfs ciblés
+- **`no-new-privileges`** + `cap_drop: ALL` sur tous les containers
+- **DM en mode pairing** : couplage sécurisé obligatoire
+- **7 couches de sécurité** documentées (Layer 0-6)
+
+### Modifié
+
+- `docker-compose.yml` : refonte complète avec Docker Compose profiles
+- `.env.example` : restructuré avec toutes les options de sécurité documentées
+- `README.md` : mis à jour avec profils, one-click, et tableau de sécurité par profil
+- Badge CVE-2026-25253 ajouté au README
+- Structure des dossiers mise à jour dans la documentation
+
+---
+
 ## [1.0.0] - 2026-02-02
 
 ### Ajouté
