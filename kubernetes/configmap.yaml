@@ -1,30 +1,30 @@
 # =============================================================================
-# OpenClaw Kubernetes ConfigMaps
+# Phoenix Kubernetes ConfigMaps
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
-# Description: Configuration d'OpenClaw et du proxy Squid
+# Description: Configuration d'Phoenix et du proxy Squid
 # =============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openclaw-config
-  namespace: openclaw
+  name: phoenix-config
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
-    app.kubernetes.io/instance: openclaw-production
+    app.kubernetes.io/name: phoenix
+    app.kubernetes.io/instance: phoenix-production
     app.kubernetes.io/version: "2026.1.30"
     app.kubernetes.io/component: config
-    app.kubernetes.io/part-of: openclaw-stack
-    app: openclaw
+    app.kubernetes.io/part-of: phoenix-stack
+    app: phoenix
   annotations:
-    description: "Configuration principale OpenClaw Gateway"
+    description: "Configuration principale Phoenix Gateway"
 data:
   # ==========================================================================
-  # Configuration JSON OpenClaw
+  # Configuration JSON Phoenix
   # ==========================================================================
-  openclaw.json: |
+  phoenix.json: |
     {
-      "$schema": "https://openclaw.ai/schemas/config.json",
+      "$schema": "https://phoenix.ai/schemas/config.json",
       "version": "2026.1.30",
       "gateway": {
         "host": "0.0.0.0",
@@ -56,7 +56,7 @@ data:
         "auditLog": {
           "enabled": true,
           "level": "info",
-          "destination": "/tmp/openclaw/audit.log"
+          "destination": "/tmp/phoenix/audit.log"
         }
       },
       "llm": {
@@ -93,8 +93,8 @@ data:
       },
       "proxy": {
         "enabled": true,
-        "http": "http://squid-proxy.openclaw.svc.cluster.local:3128",
-        "https": "http://squid-proxy.openclaw.svc.cluster.local:3128",
+        "http": "http://squid-proxy.phoenix.svc.cluster.local:3128",
+        "https": "http://squid-proxy.phoenix.svc.cluster.local:3128",
         "noProxy": [
           "localhost",
           "127.0.0.1",
@@ -105,7 +105,7 @@ data:
       "logging": {
         "level": "info",
         "format": "json",
-        "destination": "/tmp/openclaw",
+        "destination": "/tmp/phoenix",
         "rotation": {
           "enabled": true,
           "maxSize": "100M",
@@ -133,11 +133,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: squid-config
-  namespace: openclaw
+  namespace: phoenix
   labels:
     app.kubernetes.io/name: squid-proxy
     app.kubernetes.io/component: config
-    app.kubernetes.io/part-of: openclaw-stack
+    app.kubernetes.io/part-of: phoenix-stack
     app: squid-proxy
   annotations:
     description: "Configuration Squid avec whitelist stricte"
@@ -148,7 +148,7 @@ data:
   # ==========================================================================
   squid.conf: |
     # ===========================================================================
-    # Squid Proxy Configuration - OpenClaw Stack
+    # Squid Proxy Configuration - Phoenix Stack
     # Version: 1.0.0
     # Auteur: Ethan Bernier
     # Description: Proxy avec whitelist stricte pour accès internet contrôlé
@@ -158,7 +158,7 @@ data:
     # Configuration de base
     # ---------------------------------------------------------------------------
     http_port 3128
-    visible_hostname squid-proxy.openclaw.svc.cluster.local
+    visible_hostname squid-proxy.phoenix.svc.cluster.local
 
     # ---------------------------------------------------------------------------
     # ACL - Access Control Lists
@@ -209,9 +209,9 @@ data:
     acl whitelist_hf dstdomain .huggingface.co
     acl whitelist_hf dstdomain cdn-lfs.huggingface.co
 
-    # OpenClaw officiel
-    acl whitelist_openclaw dstdomain .openclaw.ai
-    acl whitelist_openclaw dstdomain docs.openclaw.ai
+    # Phoenix officiel
+    acl whitelist_phoenix dstdomain .phoenix.ai
+    acl whitelist_phoenix dstdomain docs.phoenix.ai
 
     # ---------------------------------------------------------------------------
     # Règles d'accès
@@ -231,7 +231,7 @@ data:
     http_access allow whitelist_docs
     http_access allow whitelist_registry
     http_access allow whitelist_hf
-    http_access allow whitelist_openclaw
+    http_access allow whitelist_phoenix
 
     # BLOQUER TOUT LE RESTE
     http_access deny all
@@ -253,7 +253,7 @@ data:
     cache_store_log none
 
     # Format de log personnalisé (pour analyse)
-    logformat openclaw %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
+    logformat phoenix %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
 
     # ---------------------------------------------------------------------------
     # Sécurité
@@ -303,12 +303,12 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openclaw-env
-  namespace: openclaw
+  name: phoenix-env
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: env-config
-    app: openclaw
+    app: phoenix
   annotations:
     description: "Variables d'environnement non sensibles"
 data:
@@ -316,20 +316,20 @@ data:
   NODE_ENV: "production"
   TZ: "Europe/Paris"
 
-  # OpenClaw
-  OPENCLAW_PORT: "18789"
-  OPENCLAW_HOST: "0.0.0.0"
-  OPENCLAW_SANDBOX_MODE: "non-main"
-  OPENCLAW_DM_ACCESS: "pairing"
-  OPENCLAW_LOG_LEVEL: "info"
+  # Phoenix
+  PHOENIX_PORT: "18789"
+  PHOENIX_HOST: "0.0.0.0"
+  PHOENIX_SANDBOX_MODE: "non-main"
+  PHOENIX_DM_ACCESS: "pairing"
+  PHOENIX_LOG_LEVEL: "info"
 
   # LLM Locaux (via host.docker.internal)
   OLLAMA_HOST: "http://host.docker.internal:11434"
   LM_STUDIO_HOST: "http://host.docker.internal:1234"
 
   # Proxy
-  HTTP_PROXY: "http://squid-proxy.openclaw.svc.cluster.local:3128"
-  HTTPS_PROXY: "http://squid-proxy.openclaw.svc.cluster.local:3128"
+  HTTP_PROXY: "http://squid-proxy.phoenix.svc.cluster.local:3128"
+  HTTPS_PROXY: "http://squid-proxy.phoenix.svc.cluster.local:3128"
   NO_PROXY: "localhost,127.0.0.1,host.docker.internal,.cluster.local"
 
   # Métriques

@@ -2,15 +2,15 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas déployer un proxy Squid dans Kubernetes qui contrôle TOUS les accès réseau sortants d'OpenClaw. C'est la deuxième ligne de défense après l'isolation du container.
+Dans ce chapitre, tu vas déployer un proxy Squid dans Kubernetes qui contrôle TOUS les accès réseau sortants d'Phoenix. C'est la deuxième ligne de défense après l'isolation du container.
 
 - **Pourquoi un proxy ?** Sans proxy, un agent IA compromis pourrait exfiltrer des données ou télécharger du code malveillant. Le proxy force tout le trafic à passer par une whitelist stricte.
-- **Architecture** : OpenClaw --> Squid Proxy --> Internet (domaines autorisés uniquement)
+- **Architecture** : Phoenix --> Squid Proxy --> Internet (domaines autorisés uniquement)
 - **Principe Zero Trust** : Aucun accès réseau n'est autorisé par défaut. Chaque domaine doit être explicitement whitelisté.
 
 ## 🛠️ Prérequis
 
-- Namespace `openclaw-sandbox` créé (Chapitre 1)
+- Namespace `phoenix-sandbox` créé (Chapitre 1)
 - kubectl configuré et fonctionnel
 - Compréhension des Services Kubernetes
 
@@ -28,10 +28,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: squid-config
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 data:
   squid.conf: |
-    # Configuration Squid pour OpenClaw - Whitelist stricte
+    # Configuration Squid pour Phoenix - Whitelist stricte
     # Version: 1.0
     # Dernière mise à jour: 2024
 
@@ -42,7 +42,7 @@ data:
     acl CONNECT method CONNECT
 
     # === ACL SOURCES ===
-    # Uniquement les pods du namespace openclaw-sandbox
+    # Uniquement les pods du namespace phoenix-sandbox
     acl localnet src 10.0.0.0/8
     acl localnet src 172.16.0.0/12
     acl localnet src 192.168.0.0/16
@@ -72,7 +72,7 @@ data:
     acl whitelist_domains dstdomain kubernetes.io
 
     # APIs LLM (si nécessaire pour certains cas)
-    # ATTENTION: Décommenter UNIQUEMENT si OpenClaw doit accéder à des APIs externes
+    # ATTENTION: Décommenter UNIQUEMENT si Phoenix doit accéder à des APIs externes
     # acl whitelist_domains dstdomain api.anthropic.com
     # acl whitelist_domains dstdomain api.openai.com
 
@@ -160,12 +160,12 @@ kubectl apply -f /tmp/squid-config.yaml
 **Vérification :**
 
 ```bash
-kubectl get configmap squid-config -n openclaw-sandbox && kubectl get configmap squid-config -n openclaw-sandbox -o jsonpath='{.data.squid\.conf}' | grep -c "whitelist_domains"
+kubectl get configmap squid-config -n phoenix-sandbox && kubectl get configmap squid-config -n phoenix-sandbox -o jsonpath='{.data.squid\.conf}' | grep -c "whitelist_domains"
 ```
 
 ### Étape 2 : Déployer le Pod Squid
 
-**Pourquoi ?** Squid doit tourner dans le même namespace qu'OpenClaw pour que les Network Policies puissent le contrôler.
+**Pourquoi ?** Squid doit tourner dans le même namespace qu'Phoenix pour que les Network Policies puissent le contrôler.
 
 **Comment ?**
 
@@ -175,7 +175,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: squid-proxy
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
   labels:
     app: squid-proxy
     component: security
@@ -255,12 +255,12 @@ kubectl apply -f /tmp/squid-deployment.yaml
 **Vérification :**
 
 ```bash
-kubectl get deployment squid-proxy -n openclaw-sandbox && kubectl rollout status deployment/squid-proxy -n openclaw-sandbox --timeout=60s
+kubectl get deployment squid-proxy -n phoenix-sandbox && kubectl rollout status deployment/squid-proxy -n phoenix-sandbox --timeout=60s
 ```
 
 ### Étape 3 : Créer le Service Squid
 
-**Pourquoi ?** Le Service Kubernetes permet aux autres Pods d'accéder à Squid via un nom DNS stable : `squid-proxy.openclaw-sandbox.svc.cluster.local`.
+**Pourquoi ?** Le Service Kubernetes permet aux autres Pods d'accéder à Squid via un nom DNS stable : `squid-proxy.phoenix-sandbox.svc.cluster.local`.
 
 **Comment ?**
 
@@ -270,7 +270,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: squid-proxy
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
   labels:
     app: squid-proxy
 spec:
@@ -292,29 +292,29 @@ kubectl apply -f /tmp/squid-service.yaml
 **Vérification :**
 
 ```bash
-kubectl get service squid-proxy -n openclaw-sandbox && kubectl get endpoints squid-proxy -n openclaw-sandbox
+kubectl get service squid-proxy -n phoenix-sandbox && kubectl get endpoints squid-proxy -n phoenix-sandbox
 ```
 
-### Étape 4 : Configurer OpenClaw pour utiliser le proxy
+### Étape 4 : Configurer Phoenix pour utiliser le proxy
 
-**Pourquoi ?** OpenClaw doit être configuré pour envoyer TOUTES ses requêtes HTTP/HTTPS via le proxy Squid.
+**Pourquoi ?** Phoenix doit être configuré pour envoyer TOUTES ses requêtes HTTP/HTTPS via le proxy Squid.
 
 **Comment ?**
 
-Mets à jour la ConfigMap OpenClaw avec les variables d'environnement du proxy :
+Mets à jour la ConfigMap Phoenix avec les variables d'environnement du proxy :
 
 ```bash
-cat << 'EOF' > /tmp/openclaw-env-config.yaml
+cat << 'EOF' > /tmp/phoenix-env-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openclaw-env
-  namespace: openclaw-sandbox
+  name: phoenix-env
+  namespace: phoenix-sandbox
 data:
-  HTTP_PROXY: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
-  HTTPS_PROXY: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
-  http_proxy: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
-  https_proxy: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
+  HTTP_PROXY: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
+  HTTPS_PROXY: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
+  http_proxy: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
+  https_proxy: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
   NO_PROXY: "localhost,127.0.0.1,.cluster.local,.svc"
   no_proxy: "localhost,127.0.0.1,.cluster.local,.svc"
   # Pour pip
@@ -326,13 +326,13 @@ EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/openclaw-env-config.yaml
+kubectl apply -f /tmp/phoenix-env-config.yaml
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get configmap openclaw-env -n openclaw-sandbox -o yaml
+kubectl get configmap phoenix-env -n phoenix-sandbox -o yaml
 ```
 
 ### Étape 5 : Tester le proxy avec un Pod de test
@@ -349,7 +349,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: test-proxy
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   securityContext:
     runAsNonRoot: true
@@ -369,43 +369,43 @@ spec:
           - ALL
     env:
     - name: HTTP_PROXY
-      value: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
+      value: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
     - name: HTTPS_PROXY
-      value: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
+      value: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
     - name: http_proxy
-      value: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
+      value: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
     - name: https_proxy
-      value: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
+      value: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
   restartPolicy: Never
 EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/test-proxy.yaml && sleep 10 && kubectl get pod test-proxy -n openclaw-sandbox
+kubectl apply -f /tmp/test-proxy.yaml && sleep 10 && kubectl get pod test-proxy -n phoenix-sandbox
 ```
 
 Test des domaines autorisés :
 
 ```bash
-kubectl exec test-proxy -n openclaw-sandbox -- curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://pypi.org && echo " - pypi.org (doit être 200)"
+kubectl exec test-proxy -n phoenix-sandbox -- curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://pypi.org && echo " - pypi.org (doit être 200)"
 ```
 
 Test des domaines bloqués :
 
 ```bash
-kubectl exec test-proxy -n openclaw-sandbox -- curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://google.com 2>&1 && echo " - google.com (doit être 403 ou timeout)"
+kubectl exec test-proxy -n phoenix-sandbox -- curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://google.com 2>&1 && echo " - google.com (doit être 403 ou timeout)"
 ```
 
 **Vérification :**
 
 ```bash
-kubectl exec test-proxy -n openclaw-sandbox -- curl -s -x http://squid-proxy:3128 -I https://github.com 2>&1 | head -5
+kubectl exec test-proxy -n phoenix-sandbox -- curl -s -x http://squid-proxy:3128 -I https://github.com 2>&1 | head -5
 ```
 
 Nettoie le Pod de test :
 
 ```bash
-kubectl delete pod test-proxy -n openclaw-sandbox --grace-period=0 --force 2>/dev/null || true
+kubectl delete pod test-proxy -n phoenix-sandbox --grace-period=0 --force 2>/dev/null || true
 ```
 
 ### Étape 6 : Configurer le monitoring des logs Squid
@@ -417,24 +417,24 @@ kubectl delete pod test-proxy -n openclaw-sandbox --grace-period=0 --force 2>/de
 Vérifie les logs en temps réel :
 
 ```bash
-kubectl logs -f deployment/squid-proxy -n openclaw-sandbox --tail=20 2>/dev/null || echo "Logs non disponibles - vérifier que le pod est running"
+kubectl logs -f deployment/squid-proxy -n phoenix-sandbox --tail=20 2>/dev/null || echo "Logs non disponibles - vérifier que le pod est running"
 ```
 
 Pour extraire les accès bloqués :
 
 ```bash
-kubectl exec deployment/squid-proxy -n openclaw-sandbox -- cat /var/log/squid/access.log 2>/dev/null | grep "DENIED" | tail -10 || echo "Pas d'accès bloqués ou logs non disponibles"
+kubectl exec deployment/squid-proxy -n phoenix-sandbox -- cat /var/log/squid/access.log 2>/dev/null | grep "DENIED" | tail -10 || echo "Pas d'accès bloqués ou logs non disponibles"
 ```
 
 **Vérification :**
 
 ```bash
-kubectl exec deployment/squid-proxy -n openclaw-sandbox -- ls -la /var/log/squid/ 2>/dev/null || echo "Vérifier que le pod Squid est running"
+kubectl exec deployment/squid-proxy -n phoenix-sandbox -- ls -la /var/log/squid/ 2>/dev/null || echo "Vérifier que le pod Squid est running"
 ```
 
 ### Étape 7 : Ajouter des domaines à la whitelist (procédure)
 
-**Pourquoi ?** Tu auras parfois besoin d'autoriser de nouveaux domaines pour OpenClaw. Voici la procédure sécurisée.
+**Pourquoi ?** Tu auras parfois besoin d'autoriser de nouveaux domaines pour Phoenix. Voici la procédure sécurisée.
 
 **Comment ?**
 
@@ -445,7 +445,7 @@ kubectl exec deployment/squid-proxy -n openclaw-sandbox -- ls -la /var/log/squid
 3. **Ajouter à la ConfigMap** : Édite la ConfigMap Squid :
 
 ```bash
-kubectl edit configmap squid-config -n openclaw-sandbox
+kubectl edit configmap squid-config -n phoenix-sandbox
 ```
 
 Ajoute la ligne suivante dans la section ACL (remplace `nouveau-domaine.com`) :
@@ -457,13 +457,13 @@ acl whitelist_domains dstdomain .nouveau-domaine.com
 4. **Redémarrer Squid** :
 
 ```bash
-kubectl rollout restart deployment/squid-proxy -n openclaw-sandbox && kubectl rollout status deployment/squid-proxy -n openclaw-sandbox
+kubectl rollout restart deployment/squid-proxy -n phoenix-sandbox && kubectl rollout status deployment/squid-proxy -n phoenix-sandbox
 ```
 
 5. **Tester l'accès** :
 
 ```bash
-kubectl run test-new-domain --rm -it --restart=Never -n openclaw-sandbox --image=curlimages/curl -- curl -x http://squid-proxy:3128 -s -o /dev/null -w "%{http_code}" https://nouveau-domaine.com
+kubectl run test-new-domain --rm -it --restart=Never -n phoenix-sandbox --image=curlimages/curl -- curl -x http://squid-proxy:3128 -s -o /dev/null -w "%{http_code}" https://nouveau-domaine.com
 ```
 
 **Vérification :**
@@ -481,12 +481,12 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] ConfigMap `squid-config` créée avec la whitelist
 - [ ] Deployment `squid-proxy` en état Running
 - [ ] Service `squid-proxy` accessible sur le port 3128
-- [ ] ConfigMap `openclaw-env` avec les variables proxy
+- [ ] ConfigMap `phoenix-env` avec les variables proxy
 - [ ] Les domaines whitelistés sont accessibles (code 200)
 - [ ] Les domaines non-whitelistés sont bloqués (code 403)
 
 ```bash
-echo "=== Vérification Proxy Squid ===" && kubectl get deployment,service,configmap -n openclaw-sandbox -l app=squid-proxy && kubectl get pods -n openclaw-sandbox -l app=squid-proxy -o wide && echo "=== Proxy OK ==="
+echo "=== Vérification Proxy Squid ===" && kubectl get deployment,service,configmap -n phoenix-sandbox -l app=squid-proxy && kubectl get pods -n phoenix-sandbox -l app=squid-proxy -o wide && echo "=== Proxy OK ==="
 ```
 
 ## ⚠️ Dépannage
@@ -498,7 +498,7 @@ echo "=== Vérification Proxy Squid ===" && kubectl get deployment,service,confi
 **Solution** :
 
 ```bash
-kubectl get pods -n openclaw-sandbox -l app=squid-proxy && kubectl describe service squid-proxy -n openclaw-sandbox
+kubectl get pods -n phoenix-sandbox -l app=squid-proxy && kubectl describe service squid-proxy -n phoenix-sandbox
 ```
 
 ### Erreur : "403 Forbidden" sur un domaine whitelisté
@@ -508,7 +508,7 @@ kubectl get pods -n openclaw-sandbox -l app=squid-proxy && kubectl describe serv
 **Solution** :
 
 ```bash
-kubectl get configmap squid-config -n openclaw-sandbox -o jsonpath='{.data.squid\.conf}' | grep -i "domaine"
+kubectl get configmap squid-config -n phoenix-sandbox -o jsonpath='{.data.squid\.conf}' | grep -i "domaine"
 ```
 
 Vérifie que le domaine commence par un point (`.domaine.com`) pour inclure les sous-domaines.
@@ -520,7 +520,7 @@ Vérifie que le domaine commence par un point (`.domaine.com`) pour inclure les 
 **Solution** :
 
 ```bash
-kubectl exec deployment/squid-proxy -n openclaw-sandbox -- nslookup pypi.org 2>/dev/null || echo "DNS non disponible depuis Squid"
+kubectl exec deployment/squid-proxy -n phoenix-sandbox -- nslookup pypi.org 2>/dev/null || echo "DNS non disponible depuis Squid"
 ```
 
 ### Les logs Squid sont vides
@@ -530,7 +530,7 @@ kubectl exec deployment/squid-proxy -n openclaw-sandbox -- nslookup pypi.org 2>/
 **Solution** :
 
 ```bash
-kubectl describe pod -n openclaw-sandbox -l app=squid-proxy | grep -A20 "Volumes"
+kubectl describe pod -n phoenix-sandbox -l app=squid-proxy | grep -A20 "Volumes"
 ```
 
 ### Squid utilise trop de mémoire
@@ -552,6 +552,6 @@ kubectl describe pod -n openclaw-sandbox -l app=squid-proxy | grep -A20 "Volumes
 
 ## ➡️ Prochaine étape
 
-Le proxy Squid contrôle maintenant les accès réseau sortants. Mais OpenClaw a besoin d'accéder à des secrets (API keys, tokens). Dans le prochain chapitre, nous allons configurer la **protection des credentials avec Kubernetes Secrets** de manière sécurisée.
+Le proxy Squid contrôle maintenant les accès réseau sortants. Mais Phoenix a besoin d'accéder à des secrets (API keys, tokens). Dans le prochain chapitre, nous allons configurer la **protection des credentials avec Kubernetes Secrets** de manière sécurisée.
 
 Rendez-vous au [Chapitre 3 - Protection des Credentials](03-protection-credentials.md).

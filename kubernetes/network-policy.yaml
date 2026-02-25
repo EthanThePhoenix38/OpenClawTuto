@@ -1,5 +1,5 @@
 # =============================================================================
-# OpenClaw Kubernetes Network Policies
+# Phoenix Kubernetes Network Policies
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
 # Description: Policies réseau Zero-Trust pour isolation maximale
@@ -9,10 +9,10 @@
 # ===================
 #
 #   ┌─────────────────────────────────────────────────────────────────────┐
-#   │                        NAMESPACE: openclaw                          │
+#   │                        NAMESPACE: phoenix                          │
 #   │                                                                     │
 #   │  ┌─────────────┐      ┌─────────────┐      ┌─────────────────────┐ │
-#   │  │  OpenClaw   │─────▶│ Squid Proxy │─────▶│   Internet          │ │
+#   │  │  Phoenix   │─────▶│ Squid Proxy │─────▶│   Internet          │ │
 #   │  │   :18789    │      │    :3128    │      │  (whitelist only)   │ │
 #   │  └──────┬──────┘      └─────────────┘      └─────────────────────┘ │
 #   │         │                                                          │
@@ -27,9 +27,9 @@
 #
 # RÈGLES :
 # - DENY ALL par défaut (Zero Trust)
-# - OpenClaw → Squid (port 3128) : AUTORISÉ
-# - OpenClaw → Host (port 11434, 1234) : AUTORISÉ (LLM locaux)
-# - OpenClaw → Prometheus (port 9090) : AUTORISÉ (métriques)
+# - Phoenix → Squid (port 3128) : AUTORISÉ
+# - Phoenix → Host (port 11434, 1234) : AUTORISÉ (LLM locaux)
+# - Phoenix → Prometheus (port 9090) : AUTORISÉ (métriques)
 # - Squid → Internet (whitelist) : AUTORISÉ
 # - Tout le reste : BLOQUÉ
 #
@@ -44,11 +44,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: openclaw
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: deny-all
+    security.phoenix.io/policy: deny-all
   annotations:
     description: "Bloque tout le trafic entrant et sortant par défaut"
 spec:
@@ -62,23 +62,23 @@ spec:
 
 ---
 # =============================================================================
-# Policy 2: OpenClaw Ingress - Autoriser le trafic entrant
+# Policy 2: Phoenix Ingress - Autoriser le trafic entrant
 # =============================================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: openclaw-ingress
-  namespace: openclaw
+  name: phoenix-ingress
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: ingress
+    security.phoenix.io/policy: ingress
   annotations:
-    description: "Autorise le trafic entrant vers OpenClaw"
+    description: "Autorise le trafic entrant vers Phoenix"
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
     - Ingress
   ingress:
@@ -106,23 +106,23 @@ spec:
 
 ---
 # =============================================================================
-# Policy 3: OpenClaw Egress - Contrôler le trafic sortant
+# Policy 3: Phoenix Egress - Contrôler le trafic sortant
 # =============================================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: openclaw-egress
-  namespace: openclaw
+  name: phoenix-egress
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: egress
+    security.phoenix.io/policy: egress
   annotations:
-    description: "Contrôle strict du trafic sortant d'OpenClaw"
+    description: "Contrôle strict du trafic sortant d'Phoenix"
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
     - Egress
   egress:
@@ -179,26 +179,26 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: openclaw
+              app: phoenix
       ports:
         - protocol: TCP
           port: 18789
 
 ---
 # =============================================================================
-# Policy 4: Squid Proxy Ingress - Autoriser depuis OpenClaw uniquement
+# Policy 4: Squid Proxy Ingress - Autoriser depuis Phoenix uniquement
 # =============================================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: squid-ingress
-  namespace: openclaw
+  namespace: phoenix
   labels:
     app.kubernetes.io/name: squid-proxy
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: proxy-ingress
+    security.phoenix.io/policy: proxy-ingress
   annotations:
-    description: "Squid accepte uniquement les connexions d'OpenClaw"
+    description: "Squid accepte uniquement les connexions d'Phoenix"
 spec:
   podSelector:
     matchLabels:
@@ -206,11 +206,11 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    # UNIQUEMENT depuis les pods OpenClaw
+    # UNIQUEMENT depuis les pods Phoenix
     - from:
         - podSelector:
             matchLabels:
-              app: openclaw
+              app: phoenix
       ports:
         - protocol: TCP
           port: 3128
@@ -223,11 +223,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: squid-egress
-  namespace: openclaw
+  namespace: phoenix
   labels:
     app.kubernetes.io/name: squid-proxy
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: proxy-egress
+    security.phoenix.io/policy: proxy-egress
   annotations:
     description: "Squid peut accéder à Internet (whitelist gérée par Squid)"
 spec:
@@ -274,17 +274,17 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-prometheus-scrape
-  namespace: openclaw
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: monitoring
+    security.phoenix.io/policy: monitoring
   annotations:
     description: "Autorise Prometheus à collecter les métriques"
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
     - Ingress
   ingress:
@@ -307,17 +307,17 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: init-container-egress
-  namespace: openclaw
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: network-policy
-    security.openclaw.io/policy: init
+    security.phoenix.io/policy: init
   annotations:
     description: "Autorise l'init container à vérifier Ollama"
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
     - Egress
   egress:
@@ -339,24 +339,24 @@ spec:
 # =============================================================================
 #
 # 1. Lister toutes les policies :
-#    kubectl get networkpolicies -n openclaw
+#    kubectl get networkpolicies -n phoenix
 #
 # 2. Décrire une policy :
-#    kubectl describe networkpolicy deny-all -n openclaw
+#    kubectl describe networkpolicy deny-all -n phoenix
 #
-# 3. Tester la connectivité (depuis un pod OpenClaw) :
+# 3. Tester la connectivité (depuis un pod Phoenix) :
 #
 #    # Doit RÉUSSIR : Squid proxy
-#    kubectl exec -it <pod> -n openclaw -- nc -zv squid-proxy 3128
+#    kubectl exec -it <pod> -n phoenix -- nc -zv squid-proxy 3128
 #
 #    # Doit RÉUSSIR : Ollama (si host accessible)
-#    kubectl exec -it <pod> -n openclaw -- nc -zv host.docker.internal 11434
+#    kubectl exec -it <pod> -n phoenix -- nc -zv host.docker.internal 11434
 #
 #    # Doit ÉCHOUER : Internet direct
-#    kubectl exec -it <pod> -n openclaw -- nc -zv google.com 443
+#    kubectl exec -it <pod> -n phoenix -- nc -zv google.com 443
 #
 #    # Doit RÉUSSIR : Internet via proxy (si domaine whitelisté)
-#    kubectl exec -it <pod> -n openclaw -- \
+#    kubectl exec -it <pod> -n phoenix -- \
 #      curl -x http://squid-proxy:3128 https://api.anthropic.com
 #
 # 4. Logs des connexions bloquées (si Calico) :

@@ -1,288 +1,471 @@
 # =============================================================================
-# OpenClaw Docker Compose
-# Version: 1.0.0
+# Phoenix Docker Compose — Multi-Profile Ultra-Secure
+# Version: 2.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
-# Description: Stack complète pour développement local
+# Date: 2026-02-13
+# Description: Stack multi-profil (local / k3d / koyeb) post-CVE-2026-25253
 # =============================================================================
 #
-# USAGE :
-#   docker compose up -d          # Démarrer tous les services
-#   docker compose up openclaw    # Démarrer OpenClaw uniquement
-#   docker compose logs -f        # Voir les logs
-#   docker compose down           # Arrêter tout
-#   docker compose down -v        # Arrêter + supprimer volumes
+# PROFILS DISPONIBLES :
+#
+#   🏠 local  → Docker seul, LLM locaux, pas de proxy, usage personnel
+#   🛡️ k3d    → Docker + Squid proxy (whitelist), monitoring, Zero-Trust
+#   ☁️  koyeb  → Cloud-ready, API keys obligatoires, pas de LLM local
+#
+# INSTALLATION ONE-CLICK :
+#   ./scripts/setup.sh      # Onboarding interactif → génère .env + lance le bon profil
+#
+# USAGE MANUEL :
+#   docker compose --profile local up -d       # Mode local
+#   docker compose --profile k3d up -d         # Mode k3d (avec proxy + monitoring)
+#   docker compose --profile koyeb up -d       # Mode cloud
+#
+# COMMANDES UTILES :
+#   docker compose logs -f phoenix            # Logs en temps réel
+#   docker compose ps                          # État des services
+#   docker compose down                        # Arrêter
+#   docker compose down -v                     # Arrêter + supprimer volumes
 #
 # PRÉREQUIS :
-#   - Docker Desktop (Mac/Windows) ou Docker Engine (Linux)
-#   - Ollama installé NATIVEMENT sur le host (pas dans Docker)
+#   - Docker Desktop 4.25+ (Mac/Windows) ou Docker Engine 24+ (Linux)
 #   - 8 Go RAM minimum alloués à Docker
+#   - [local/k3d] Ollama installé NATIVEMENT sur le host
+#   - [koyeb] Clé API Anthropic ou OpenAI
+#
+# SÉCURITÉ :
+#   - Image >= 2026.1.29 (patch CVE-2026-25253)
+#   - Token d'auth gateway obligatoire
+#   - Non-root, cap_drop ALL, no-new-privileges
+#   - PID limit (anti fork-bomb)
+#   - Filesystem read-only + tmpfs ciblés
+#   - mDNS désactivé, Control UI sécurisé
+#   - [k3d] Proxy Squid whitelist stricte
 #
 # =============================================================================
 
-name: openclaw-stack
+name: phoenix-stack
 
 # =============================================================================
 # SERVICES
 # =============================================================================
 services:
-  # ---------------------------------------------------------------------------
-  # OpenClaw Gateway - Service principal
-  # ---------------------------------------------------------------------------
-  openclaw:
-    image: ghcr.io/openclaw/openclaw:2026.1.30
-    # Ou build local :
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    #   target: production
-    container_name: openclaw
-    hostname: openclaw
 
-    # Restart policy
+  # ---------------------------------------------------------------------------
+  # Phoenix Gateway — Mode LOCAL (Docker simple, LLM locaux, pas de proxy)
+  # ---------------------------------------------------------------------------
+  phoenix-local:
+    image: ghcr.io/phoenix/phoenix:2026.1.30
+    container_name: phoenix
+    hostname: phoenix
+    profiles:
+      - local
+
     restart: unless-stopped
 
-    # Ports
+    # Bind sur localhost uniquement (sécurité)
     ports:
-      - "18789:18789"
+      - "127.0.0.1:18789:18789"
 
-    # Variables d'environnement
     environment:
+      # --- Core ---
       - NODE_ENV=production
-      - OPENCLAW_PORT=18789
-      - OPENCLAW_HOST=0.0.0.0
-      - OPENCLAW_SANDBOX_MODE=non-main
-      - OPENCLAW_DM_ACCESS=pairing
-      - OPENCLAW_LOG_LEVEL=info
-      # LLM locaux (via host.docker.internal)
-      - OLLAMA_HOST=http://host.docker.internal:11434
-      - LM_STUDIO_HOST=http://host.docker.internal:1234
-      # Proxy (si squid activé)
-      - HTTP_PROXY=http://squid:3128
-      - HTTPS_PROXY=http://squid:3128
-      - NO_PROXY=localhost,127.0.0.1,host.docker.internal
-      # API Keys (depuis fichier .env)
+      - PHOENIX_PORT=18789
+      - PHOENIX_HOST=0.0.0.0
+      - TZ=${TZ:-Europe/Paris}
+      # --- Sécurité (post-CVE-2026-25253) ---
+      - PHOENIX_SANDBOX_MODE=${PHOENIX_SANDBOX_MODE:-non-main}
+      - PHOENIX_DM_ACCESS=${PHOENIX_DM_ACCESS:-pairing}
+      - PHOENIX_AUTH_MODE=${PHOENIX_AUTH_MODE:-token}
+      - PHOENIX_GATEWAY_TOKEN=${PHOENIX_GATEWAY_TOKEN:?⚠️  PHOENIX_GATEWAY_TOKEN est obligatoire — openssl rand -hex 32}
+      - PHOENIX_MDNS_MODE=${PHOENIX_MDNS_MODE:-off}
+      - PHOENIX_CONTROL_UI_INSECURE_AUTH=${PHOENIX_CONTROL_UI_INSECURE_AUTH:-false}
+      - PHOENIX_SANDBOX_SCOPE=${PHOENIX_SANDBOX_SCOPE:-agent}
+      - PHOENIX_LOG_LEVEL=${PHOENIX_LOG_LEVEL:-info}
+      # --- LLM locaux ---
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - LM_STUDIO_HOST=${LM_STUDIO_HOST:-http://host.docker.internal:1234}
+      # --- API Keys (optionnelles en local) ---
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      # Timezone
-      - TZ=Europe/Paris
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
 
-    # Volumes
     volumes:
-      # Configuration
-      - ./config/openclaw.json:/home/openclaw/.openclaw/openclaw.json:ro
-      # Données persistantes
-      - openclaw-data:/home/openclaw/.openclaw
-      # Logs
-      - openclaw-logs:/var/log/openclaw
-      # Tmp (pour fichiers temporaires)
+      - phoenix-data:/home/phoenix/.phoenix
+      - phoenix-logs:/var/log/phoenix
       - type: tmpfs
         target: /tmp
         tmpfs:
-          size: 1073741824  # 1 Go
+          size: ${PHOENIX_TMPFS_SIZE:-1073741824}
 
-    # Sécurité
+    # --- Sécurité container ---
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    read_only: false  # OpenClaw a besoin d'écrire
+    read_only: true
+    tmpfs:
+      - /home/phoenix/.phoenix:uid=1000,gid=1000
     user: "1000:1000"
+    pids_limit: ${PHOENIX_PIDS_LIMIT:-256}
 
-    # Ressources
+    # --- Ressources ---
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 2G
+          cpus: "${PHOENIX_CPU_LIMIT:-2}"
+          memory: ${PHOENIX_MEM_LIMIT:-2G}
         reservations:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "${PHOENIX_CPU_RESERVATION:-0.5}"
+          memory: ${PHOENIX_MEM_RESERVATION:-512M}
 
-    # Health check
+    # --- Health check ---
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:18789/health"]
+      test: [ "CMD", "curl", "-sf", "http://localhost:18789/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
 
-    # Dépendances
+    networks:
+      - phoenix-network
+
+    labels:
+      - "com.phoenix.service=gateway"
+      - "com.phoenix.profile=local"
+      - "com.phoenix.version=2026.1.30"
+      - "com.phoenix.security=hardened"
+
+  # ---------------------------------------------------------------------------
+  # Phoenix Gateway — Mode K3D (Zero-Trust, proxy Squid, monitoring)
+  # ---------------------------------------------------------------------------
+  phoenix-k3d:
+    image: ghcr.io/phoenix/phoenix:2026.1.30
+    container_name: phoenix
+    hostname: phoenix
+    profiles:
+      - k3d
+
+    restart: unless-stopped
+
+    # Bind sur localhost uniquement
+    ports:
+      - "127.0.0.1:18789:18789"
+
+    environment:
+      # --- Core ---
+      - NODE_ENV=production
+      - PHOENIX_PORT=18789
+      - PHOENIX_HOST=0.0.0.0
+      - TZ=${TZ:-Europe/Paris}
+      # --- Sécurité (post-CVE-2026-25253) ---
+      - PHOENIX_SANDBOX_MODE=${PHOENIX_SANDBOX_MODE:-non-main}
+      - PHOENIX_DM_ACCESS=${PHOENIX_DM_ACCESS:-pairing}
+      - PHOENIX_AUTH_MODE=${PHOENIX_AUTH_MODE:-token}
+      - PHOENIX_GATEWAY_TOKEN=${PHOENIX_GATEWAY_TOKEN:?⚠️  PHOENIX_GATEWAY_TOKEN est obligatoire — openssl rand -hex 32}
+      - PHOENIX_MDNS_MODE=${PHOENIX_MDNS_MODE:-off}
+      - PHOENIX_CONTROL_UI_INSECURE_AUTH=${PHOENIX_CONTROL_UI_INSECURE_AUTH:-false}
+      - PHOENIX_SANDBOX_SCOPE=${PHOENIX_SANDBOX_SCOPE:-agent}
+      - PHOENIX_LOG_LEVEL=${PHOENIX_LOG_LEVEL:-info}
+      # --- LLM locaux ---
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - LM_STUDIO_HOST=${LM_STUDIO_HOST:-http://host.docker.internal:1234}
+      # --- Proxy Squid (tout le trafic sortant passe par là) ---
+      - HTTP_PROXY=http://squid:3128
+      - HTTPS_PROXY=http://squid:3128
+      - NO_PROXY=localhost,127.0.0.1,host.docker.internal,ollama
+      # --- API Keys ---
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+
+    volumes:
+      - phoenix-data:/home/phoenix/.phoenix
+      - phoenix-logs:/var/log/phoenix
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: ${PHOENIX_TMPFS_SIZE:-1073741824}
+
+    # --- Sécurité container ---
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /home/phoenix/.phoenix:uid=1000,gid=1000
+    user: "1000:1000"
+    pids_limit: ${PHOENIX_PIDS_LIMIT:-256}
+
+    # --- Ressources ---
+    deploy:
+      resources:
+        limits:
+          cpus: "${PHOENIX_CPU_LIMIT:-2}"
+          memory: ${PHOENIX_MEM_LIMIT:-2G}
+        reservations:
+          cpus: "${PHOENIX_CPU_RESERVATION:-0.5}"
+          memory: ${PHOENIX_MEM_RESERVATION:-512M}
+
+    # --- Health check ---
+    healthcheck:
+      test: [ "CMD", "curl", "-sf", "http://localhost:18789/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # --- Dépendances ---
     depends_on:
       squid:
         condition: service_healthy
 
-    # Réseau
     networks:
-      - openclaw-network
+      - phoenix-network
 
-    # Labels
     labels:
-      - "com.openclaw.service=gateway"
-      - "com.openclaw.version=2026.1.30"
-      - "traefik.enable=false"
+      - "com.phoenix.service=gateway"
+      - "com.phoenix.profile=k3d"
+      - "com.phoenix.version=2026.1.30"
+      - "com.phoenix.security=zero-trust"
 
   # ---------------------------------------------------------------------------
-  # Squid Proxy - Whitelist internet
+  # Phoenix Gateway — Mode KOYEB (cloud, pas de LLM local)
+  # ---------------------------------------------------------------------------
+  phoenix-koyeb:
+    image: ghcr.io/phoenix/phoenix:2026.1.30
+    container_name: phoenix
+    hostname: phoenix
+    profiles:
+      - koyeb
+
+    restart: unless-stopped
+
+    # Koyeb gère le networking — bind sur toutes les interfaces
+    ports:
+      - "18789:18789"
+
+    environment:
+      # --- Core ---
+      - NODE_ENV=production
+      - PHOENIX_PORT=18789
+      - PHOENIX_HOST=0.0.0.0
+      - TZ=${TZ:-Europe/Paris}
+      # --- Sécurité (post-CVE-2026-25253) ---
+      - PHOENIX_SANDBOX_MODE=${PHOENIX_SANDBOX_MODE:-non-main}
+      - PHOENIX_DM_ACCESS=${PHOENIX_DM_ACCESS:-pairing}
+      - PHOENIX_AUTH_MODE=${PHOENIX_AUTH_MODE:-token}
+      - PHOENIX_GATEWAY_TOKEN=${PHOENIX_GATEWAY_TOKEN:?⚠️  PHOENIX_GATEWAY_TOKEN est obligatoire — openssl rand -hex 32}
+      - PHOENIX_MDNS_MODE=${PHOENIX_MDNS_MODE:-off}
+      - PHOENIX_CONTROL_UI_INSECURE_AUTH=${PHOENIX_CONTROL_UI_INSECURE_AUTH:-false}
+      - PHOENIX_SANDBOX_SCOPE=${PHOENIX_SANDBOX_SCOPE:-agent}
+      - PHOENIX_LOG_LEVEL=${PHOENIX_LOG_LEVEL:-info}
+      # --- API Keys (OBLIGATOIRES en cloud) ---
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:?⚠️  Au moins une clé API est requise en mode koyeb}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      # ⚠️  Pas de OLLAMA_HOST / LM_STUDIO_HOST (inaccessibles depuis le cloud)
+      # ⚠️  Pas de HTTP_PROXY (pas de Squid en cloud)
+
+    volumes:
+      - phoenix-data:/home/phoenix/.phoenix
+      - phoenix-logs:/var/log/phoenix
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: ${PHOENIX_TMPFS_SIZE:-1073741824}
+
+    # --- Sécurité container ---
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /home/phoenix/.phoenix:uid=1000,gid=1000
+    user: "1000:1000"
+    pids_limit: ${PHOENIX_PIDS_LIMIT:-256}
+
+    # --- Ressources ---
+    deploy:
+      resources:
+        limits:
+          cpus: "${PHOENIX_CPU_LIMIT:-2}"
+          memory: ${PHOENIX_MEM_LIMIT:-2G}
+        reservations:
+          cpus: "${PHOENIX_CPU_RESERVATION:-0.5}"
+          memory: ${PHOENIX_MEM_RESERVATION:-512M}
+
+    # --- Health check ---
+    healthcheck:
+      test: [ "CMD", "curl", "-sf", "http://localhost:18789/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    networks:
+      - phoenix-network
+
+    labels:
+      - "com.phoenix.service=gateway"
+      - "com.phoenix.profile=koyeb"
+      - "com.phoenix.version=2026.1.30"
+      - "com.phoenix.security=cloud-hardened"
+
+  # ---------------------------------------------------------------------------
+  # Squid Proxy — Whitelist internet (k3d uniquement)
   # ---------------------------------------------------------------------------
   squid:
     image: ubuntu/squid:5.7-23.04_beta
     container_name: squid-proxy
     hostname: squid
+    profiles:
+      - k3d
 
     restart: unless-stopped
 
-    # Ports (optionnel - uniquement pour debug)
-    # ports:
-    #   - "3128:3128"
-
-    # Volumes
     volumes:
-      - ./config/squid.conf:/etc/squid/squid.conf:ro
+      - ./squid.conf:/etc/squid/squid.conf:ro
       - squid-cache:/var/spool/squid
       - squid-logs:/var/log/squid
 
-    # Sécurité
+    # --- Sécurité ---
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /var/run/squid:uid=1000,gid=1000
     user: "1000:1000"
 
-    # Ressources
+    # --- Ressources ---
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "${SQUID_CPU_LIMIT:-0.5}"
+          memory: ${SQUID_MEM_LIMIT:-512M}
         reservations:
           cpus: "0.1"
           memory: 128M
 
-    # Health check
+    # --- Health check ---
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 3128 || exit 1"]
+      test: [ "CMD-SHELL", "nc -z localhost 3128 || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
 
-    # Réseau
     networks:
-      - openclaw-network
+      - phoenix-network
 
-    # Labels
     labels:
-      - "com.openclaw.service=proxy"
+      - "com.phoenix.service=proxy"
+      - "com.phoenix.profile=k3d"
+      - "com.phoenix.security=whitelist-only"
 
   # ---------------------------------------------------------------------------
-  # Prometheus - Métriques (optionnel)
+  # Prometheus — Métriques (k3d uniquement)
   # ---------------------------------------------------------------------------
   prometheus:
     image: prom/prometheus:v2.48.0
     container_name: prometheus
     hostname: prometheus
+    profiles:
+      - k3d
 
     restart: unless-stopped
-    profiles:
-      - monitoring
 
-    # Ports
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
 
-    # Volumes
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
 
-    # Commande
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=7d"
+      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_DAYS:-7}d"
       - "--web.enable-lifecycle"
 
-    # Sécurité
     security_opt:
       - no-new-privileges:true
-    user: "65534:65534"  # nobody
+    read_only: true
+    user: "65534:65534"
 
-    # Ressources
     deploy:
       resources:
         limits:
           cpus: "0.5"
           memory: 512M
 
-    # Réseau
     networks:
-      - openclaw-network
+      - phoenix-network
 
-    # Labels
     labels:
-      - "com.openclaw.service=monitoring"
+      - "com.phoenix.service=monitoring"
+      - "com.phoenix.profile=k3d"
 
   # ---------------------------------------------------------------------------
-  # Grafana - Dashboards (optionnel)
+  # Grafana — Dashboards (k3d uniquement)
   # ---------------------------------------------------------------------------
   grafana:
     image: grafana/grafana:10.2.2
     container_name: grafana
     hostname: grafana
+    profiles:
+      - k3d
 
     restart: unless-stopped
-    profiles:
-      - monitoring
 
-    # Ports
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
 
-    # Variables d'environnement
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?⚠️  GRAFANA_PASSWORD est obligatoire}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3000
       - GF_INSTALL_PLUGINS=grafana-clock-panel
 
-    # Volumes
     volumes:
       - grafana-data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
 
-    # Sécurité
     security_opt:
       - no-new-privileges:true
     user: "472:472"
 
-    # Ressources
     deploy:
       resources:
         limits:
           cpus: "0.5"
           memory: 256M
 
-    # Dépendances
     depends_on:
       - prometheus
 
-    # Réseau
     networks:
-      - openclaw-network
+      - phoenix-network
 
-    # Labels
     labels:
-      - "com.openclaw.service=dashboards"
+      - "com.phoenix.service=dashboards"
+      - "com.phoenix.profile=k3d"
 
 # =============================================================================
 # NETWORKS
 # =============================================================================
 networks:
-  openclaw-network:
-    name: openclaw-network
+  phoenix-network:
+    name: phoenix-network
     driver: bridge
     ipam:
       config:
@@ -290,69 +473,66 @@ networks:
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "true"
     labels:
-      - "com.openclaw.network=internal"
+      - "com.phoenix.network=internal"
 
 # =============================================================================
 # VOLUMES
 # =============================================================================
 volumes:
-  # OpenClaw
-  openclaw-data:
-    name: openclaw-data
+  # Phoenix
+  phoenix-data:
+    name: phoenix-data
     labels:
-      - "com.openclaw.volume=data"
-
-  openclaw-logs:
-    name: openclaw-logs
+      - "com.phoenix.volume=data"
+  phoenix-logs:
+    name: phoenix-logs
     labels:
-      - "com.openclaw.volume=logs"
+      - "com.phoenix.volume=logs"
 
-  # Squid
+  # Squid (k3d)
   squid-cache:
     name: squid-cache
     labels:
-      - "com.openclaw.volume=proxy-cache"
-
+      - "com.phoenix.volume=proxy-cache"
   squid-logs:
     name: squid-logs
     labels:
-      - "com.openclaw.volume=proxy-logs"
+      - "com.phoenix.volume=proxy-logs"
 
-  # Monitoring
+  # Monitoring (k3d)
   prometheus-data:
     name: prometheus-data
     labels:
-      - "com.openclaw.volume=metrics"
-
+      - "com.phoenix.volume=metrics"
   grafana-data:
     name: grafana-data
     labels:
-      - "com.openclaw.volume=dashboards"
+      - "com.phoenix.volume=dashboards"
 
 # =============================================================================
-# NOTES D'UTILISATION
+# QUICK REFERENCE
 # =============================================================================
 #
-# 1. PREMIER DÉMARRAGE :
-#    cp .env.example .env
-#    # Éditer .env avec vos clés API
-#    docker compose up -d
+# 1. INSTALLATION AUTOMATIQUE (recommandé) :
+#    ./scripts/setup.sh
 #
-# 2. AVEC MONITORING :
-#    docker compose --profile monitoring up -d
+# 2. INSTALLATION MANUELLE :
+#    cp .env.example .env
+#    # Éditer .env (changer tokens, clés API, mot de passe Grafana)
+#    docker compose --profile <local|k3d|koyeb> up -d
 #
 # 3. VÉRIFIER L'ÉTAT :
 #    docker compose ps
-#    docker compose logs openclaw
+#    curl -H "Authorization: Bearer $PHOENIX_GATEWAY_TOKEN" http://localhost:18789/health
 #
-# 4. ACCÉDER À OPENCLAW :
-#    curl http://localhost:18789/health
+# 4. AUDIT DE SÉCURITÉ :
+#    docker compose exec phoenix phoenix security audit --deep
 #
-# 5. OLLAMA DOIT TOURNER SUR LE HOST :
-#    ollama serve  # Dans un autre terminal
+# 5. OLLAMA (local/k3d) :
+#    ollama serve   # Dans un autre terminal sur le host
 #
 # 6. DEBUG :
-#    docker compose exec openclaw sh
-#    docker compose logs -f squid
+#    docker compose --profile <profil> logs -f
+#    docker compose exec phoenix sh
 #
 # =============================================================================

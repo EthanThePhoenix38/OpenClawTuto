@@ -2,7 +2,7 @@
 
 ## 📋 Ce que tu vas apprendre
 
-- Comment surveiller OpenClaw en temps réel
+- Comment surveiller Phoenix en temps réel
 - Configurer des alertes automatiques
 - Analyser les logs de sécurité
 - Détecter les comportements anormaux
@@ -11,7 +11,7 @@
 
 - [Chapitre 3.5](./05-audit-securite.md) complété
 - k3s opérationnel
-- OpenClaw déployé
+- Phoenix déployé
 
 ---
 
@@ -19,7 +19,7 @@
 
 ### Étape 1 : Comprendre le monitoring Kubernetes
 
-**Pourquoi ?** Kubernetes collecte automatiquement des métriques sur tous les pods. On va les exploiter pour surveiller OpenClaw.
+**Pourquoi ?** Kubernetes collecte automatiquement des métriques sur tous les pods. On va les exploiter pour surveiller Phoenix.
 
 **Les 3 niveaux de monitoring :**
 
@@ -112,9 +112,9 @@ prometheus-grafana-xxxx                                  3/3     Running   0    
 alertmanager-prometheus-kube-prometheus-alertmanager-0   2/2     Running   0          2m
 ```
 
-### Étape 3 : Créer un ServiceMonitor pour OpenClaw
+### Étape 3 : Créer un ServiceMonitor pour Phoenix
 
-**Pourquoi ?** Pour que Prometheus collecte les métriques d'OpenClaw, il faut lui dire où les trouver.
+**Pourquoi ?** Pour que Prometheus collecte les métriques d'Phoenix, il faut lui dire où les trouver.
 
 **Comment ?**
 
@@ -123,14 +123,14 @@ cat << 'EOF' | kubectl apply -f -
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: openclaw-monitor
-  namespace: openclaw
+  name: phoenix-monitor
+  namespace: phoenix
   labels:
     release: prometheus
 spec:
   selector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   endpoints:
   - port: http
     path: /metrics
@@ -138,14 +138,14 @@ spec:
     scrapeTimeout: 10s
   namespaceSelector:
     matchNames:
-    - openclaw
+    - phoenix
 EOF
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get servicemonitor -n openclaw
+kubectl get servicemonitor -n phoenix
 ```
 
 ### Étape 4 : Configurer les alertes critiques
@@ -169,47 +169,47 @@ cat << 'EOF' | kubectl apply -f -
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: openclaw-alerts
-  namespace: openclaw
+  name: phoenix-alerts
+  namespace: phoenix
   labels:
     release: prometheus
 spec:
   groups:
-  - name: openclaw.rules
+  - name: phoenix.rules
     rules:
-    # Alerte si OpenClaw est down
-    - alert: OpenClawDown
-      expr: up{job="openclaw"} == 0
+    # Alerte si Phoenix est down
+    - alert: PhoenixDown
+      expr: up{job="phoenix"} == 0
       for: 1m
       labels:
         severity: critical
       annotations:
-        summary: "OpenClaw est DOWN"
-        description: "Le pod OpenClaw ne répond plus depuis 1 minute."
+        summary: "Phoenix est DOWN"
+        description: "Le pod Phoenix ne répond plus depuis 1 minute."
 
     # Alerte CPU élevé
-    - alert: OpenClawHighCPU
-      expr: rate(container_cpu_usage_seconds_total{pod=~"openclaw.*"}[5m]) > 0.8
+    - alert: PhoenixHighCPU
+      expr: rate(container_cpu_usage_seconds_total{pod=~"phoenix.*"}[5m]) > 0.8
       for: 5m
       labels:
         severity: warning
       annotations:
-        summary: "OpenClaw CPU élevé"
+        summary: "Phoenix CPU élevé"
         description: "CPU > 80% depuis 5 minutes."
 
     # Alerte mémoire élevée
-    - alert: OpenClawHighMemory
-      expr: container_memory_usage_bytes{pod=~"openclaw.*"} / container_spec_memory_limit_bytes{pod=~"openclaw.*"} > 0.9
+    - alert: PhoenixHighMemory
+      expr: container_memory_usage_bytes{pod=~"phoenix.*"} / container_spec_memory_limit_bytes{pod=~"phoenix.*"} > 0.9
       for: 5m
       labels:
         severity: warning
       annotations:
-        summary: "OpenClaw mémoire élevée"
+        summary: "Phoenix mémoire élevée"
         description: "Mémoire > 90% depuis 5 minutes."
 
     # Alerte tentatives d'authentification échouées
-    - alert: OpenClawAuthFailures
-      expr: rate(openclaw_auth_failures_total[1m]) > 5
+    - alert: PhoenixAuthFailures
+      expr: rate(phoenix_auth_failures_total[1m]) > 5
       for: 1m
       labels:
         severity: critical
@@ -222,7 +222,7 @@ EOF
 **Vérification :**
 
 ```bash
-kubectl get prometheusrules -n openclaw
+kubectl get prometheusrules -n phoenix
 ```
 
 ### Étape 5 : Configurer les notifications
@@ -268,11 +268,11 @@ stringData:
     receivers:
     - name: 'ntfy'
       webhook_configs:
-      - url: 'https://ntfy.sh/openclaw-alerts'
+      - url: 'https://ntfy.sh/phoenix-alerts'
         send_resolved: true
     - name: 'ntfy-critical'
       webhook_configs:
-      - url: 'https://ntfy.sh/openclaw-critical'
+      - url: 'https://ntfy.sh/phoenix-critical'
         send_resolved: true
 EOF
 ```
@@ -280,7 +280,7 @@ EOF
 **Pour recevoir les alertes :**
 
 1. Télécharge l'app ntfy sur ton téléphone (iOS/Android)
-2. Abonne-toi au topic `openclaw-alerts`
+2. Abonne-toi au topic `phoenix-alerts`
 3. Tu recevras les alertes en push !
 
 ### Étape 6 : Accéder à Grafana
@@ -307,7 +307,7 @@ kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
    - Username: `admin`
    - Password: (celui récupéré à l'étape 1)
 
-### Étape 7 : Créer un dashboard OpenClaw
+### Étape 7 : Créer un dashboard Phoenix
 
 **Pourquoi ?** Un dashboard personnalisé te donne une vue d'ensemble en un coup d'œil.
 
@@ -366,11 +366,11 @@ Dans Grafana :
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "up{job=\"openclaw\"}",
+          "expr": "up{job=\"phoenix\"}",
           "refId": "A"
         }
       ],
-      "title": "OpenClaw Status",
+      "title": "Phoenix Status",
       "type": "gauge"
     },
     {
@@ -409,7 +409,7 @@ Dans Grafana :
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "rate(container_cpu_usage_seconds_total{pod=~\"openclaw.*\"}[5m]) * 100",
+          "expr": "rate(container_cpu_usage_seconds_total{pod=~\"phoenix.*\"}[5m]) * 100",
           "legendFormat": "CPU %",
           "refId": "A"
         }
@@ -421,13 +421,13 @@ Dans Grafana :
   "refresh": "5s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["openclaw"],
+  "tags": ["phoenix"],
   "templating": {"list": []},
   "time": {"from": "now-1h", "to": "now"},
   "timepicker": {},
   "timezone": "",
-  "title": "OpenClaw Dashboard",
-  "uid": "openclaw-main",
+  "title": "Phoenix Dashboard",
+  "uid": "phoenix-main",
   "version": 1,
   "weekStart": ""
 }
@@ -442,19 +442,19 @@ Dans Grafana :
 1. Voir les logs en direct :
 
 ```bash
-kubectl logs -f deployment/openclaw -n openclaw
+kubectl logs -f deployment/phoenix -n phoenix
 ```
 
 2. Filtrer les erreurs :
 
 ```bash
-kubectl logs deployment/openclaw -n openclaw | grep -i error
+kubectl logs deployment/phoenix -n phoenix | grep -i error
 ```
 
 3. Exporter les logs des dernières 24h :
 
 ```bash
-kubectl logs deployment/openclaw -n openclaw --since=24h > /tmp/openclaw-logs-$(date +%Y%m%d).txt
+kubectl logs deployment/phoenix -n phoenix --since=24h > /tmp/phoenix-logs-$(date +%Y%m%d).txt
 ```
 
 ### Étape 9 : Surveiller les événements de sécurité
@@ -464,7 +464,7 @@ kubectl logs deployment/openclaw -n openclaw --since=24h > /tmp/openclaw-logs-$(
 **Comment ?**
 
 ```bash
-kubectl get events -n openclaw --sort-by='.lastTimestamp' | tail -20
+kubectl get events -n phoenix --sort-by='.lastTimestamp' | tail -20
 ```
 
 **Événements à surveiller :**
@@ -482,23 +482,23 @@ kubectl get events -n openclaw --sort-by='.lastTimestamp' | tail -20
 ## ✅ Checklist
 
 - [ ] Prometheus Stack installé
-- [ ] ServiceMonitor OpenClaw créé
+- [ ] ServiceMonitor Phoenix créé
 - [ ] Règles d'alertes configurées
 - [ ] Notifications configurées (ntfy.sh)
 - [ ] Grafana accessible
-- [ ] Dashboard OpenClaw créé
+- [ ] Dashboard Phoenix créé
 - [ ] Logs centralisés configurés
 
 ---
 
 ## ⚠️ Dépannage
 
-**Problème :** "Prometheus ne collecte pas les métriques OpenClaw"
+**Problème :** "Prometheus ne collecte pas les métriques Phoenix"
 
 **Solution :**
 ```bash
-kubectl get endpoints -n openclaw
-kubectl describe servicemonitor openclaw-monitor -n openclaw
+kubectl get endpoints -n phoenix
+kubectl describe servicemonitor phoenix-monitor -n phoenix
 ```
 Vérifie que le label `release: prometheus` est présent.
 

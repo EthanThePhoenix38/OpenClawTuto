@@ -51,11 +51,11 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 ### Sécurité
 
 - ⚠️ **Patch CVE-2026-25253** (CSRF → RCE, CVSS 8.8) : image minimale 2026.1.29
-- **Token d'authentification gateway obligatoire** (`OPENCLAW_AUTH_MODE=token`)
+- **Token d'authentification gateway obligatoire** (`PHOENIX_AUTH_MODE=token`)
 - **Bind localhost** (`127.0.0.1`) par défaut pour modes local et k3d
-- **mDNS désactivé** en production (`OPENCLAW_MDNS_MODE=off`)
-- **Control UI sécurisé** (`OPENCLAW_CONTROL_UI_INSECURE_AUTH=false`)
-- **Sandbox per-agent** (`OPENCLAW_SANDBOX_SCOPE=agent`)
+- **mDNS désactivé** en production (`PHOENIX_MDNS_MODE=off`)
+- **Control UI sécurisé** (`PHOENIX_CONTROL_UI_INSECURE_AUTH=false`)
+- **Sandbox per-agent** (`PHOENIX_SANDBOX_SCOPE=agent`)
 - **PID limits** (256) : protection anti fork-bomb
 - **Filesystem read-only** avec tmpfs ciblés
 - **`no-new-privileges`** + `cap_drop: ALL` sur tous les containers
@@ -85,21 +85,21 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
   - Annexes (glossaire, commandes, ressources)
 
 - **Configuration Kubernetes complète**
-  - `namespace.yaml` : Namespace isolé openclaw
-  - `deployment.yaml` : Déploiement OpenClaw sécurisé
+  - `namespace.yaml` : Namespace isolé phoenix
+  - `deployment.yaml` : Déploiement Phoenix sécurisé
   - `service.yaml` : Services ClusterIP et NodePort
-  - `configmap.yaml` : Configuration OpenClaw
+  - `configmap.yaml` : Configuration Phoenix
   - `secrets.yaml` : Gestion des secrets chiffrés
   - `network-policy.yaml` : Politiques réseau restrictives
 
 - **Configuration Docker**
-  - `Dockerfile` : Image OpenClaw durcie
+  - `Dockerfile` : Image Phoenix durcie
   - `docker-compose.yml` : Stack complète avec proxy
   - `squid.conf` : Proxy whitelist configuré
 
 - **Scripts d'automatisation**
   - `install-k3s.sh` : Installation k3s sur macOS
-  - `deploy-openclaw.sh` : Déploiement complet
+  - `deploy-phoenix.sh` : Déploiement complet
   - `setup-ollama.sh` : Installation Ollama native
   - `backup.sh` : Sauvegarde automatique
 

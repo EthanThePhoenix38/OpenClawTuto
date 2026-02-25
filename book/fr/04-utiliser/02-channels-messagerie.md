@@ -2,7 +2,7 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas connecter OpenClaw a differentes plateformes de messagerie : WhatsApp, Telegram, Discord et iMessage. Chaque channel permet d'interagir avec ton assistant IA depuis l'application de ton choix.
+Dans ce chapitre, tu vas connecter Phoenix a differentes plateformes de messagerie : WhatsApp, Telegram, Discord et iMessage. Chaque channel permet d'interagir avec ton assistant IA depuis l'application de ton choix.
 
 **Objectifs :**
 - Configurer WhatsApp via Baileys (sans API officielle)
@@ -16,7 +16,7 @@ Dans ce chapitre, tu vas connecter OpenClaw a differentes plateformes de message
 
 | Composant | Requis | Verification |
 |-----------|--------|--------------|
-| OpenClaw Gateway | Actif sur port 18789 | `curl http://localhost:18789/api/health` |
+| Phoenix Gateway | Actif sur port 18789 | `curl http://localhost:18789/api/health` |
 | Numero WhatsApp | Smartphone avec WhatsApp | Application installee |
 | Bot Telegram | Token BotFather | `@BotFather` sur Telegram |
 | Serveur Discord | Droits administrateur | Acces aux parametres serveur |
@@ -36,7 +36,7 @@ Baileys permet de connecter WhatsApp sans passer par l'API Business payante. La 
 Active le channel WhatsApp dans la configuration :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -45,7 +45,7 @@ nano ~/.openclaw/openclaw.json
     "whatsapp": {
       "enabled": true,
       "adapter": "baileys",
-      "sessionPath": "~/.openclaw/whatsapp-session",
+      "sessionPath": "~/.phoenix/whatsapp-session",
       "autoReconnect": true,
       "qrTimeout": 60000,
       "allowedNumbers": ["+33612345678"],
@@ -58,7 +58,7 @@ nano ~/.openclaw/openclaw.json
 Demarre la connexion WhatsApp :
 
 ```bash
-docker exec -it openclaw-gateway openclaw channel whatsapp connect
+docker exec -it phoenix-gateway phoenix channel whatsapp connect
 ```
 
 Un QR code s'affiche dans le terminal. Scanne-le avec WhatsApp :
@@ -69,7 +69,7 @@ Un QR code s'affiche dans le terminal. Scanne-le avec WhatsApp :
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw channel whatsapp status
+docker exec phoenix-gateway phoenix channel whatsapp status
 ```
 
 Tu dois voir `status: connected` et ton numero.
@@ -92,7 +92,7 @@ Cree un bot via BotFather :
 Configure le channel Telegram :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -104,7 +104,7 @@ nano ~/.openclaw/openclaw.json
       "token": "TON_TOKEN_BOTFATHER",
       "allowedUsers": [123456789],
       "commands": {
-        "start": "Bienvenue ! Je suis ton assistant OpenClaw.",
+        "start": "Bienvenue ! Je suis ton assistant Phoenix.",
         "help": "Commandes: /start, /help, /clear, /model"
       },
       "webhookUrl": "http://localhost:18789/api/channels/telegram/webhook"
@@ -120,7 +120,7 @@ Pour trouver ton user ID Telegram, envoie un message a `@userinfobot`.
 Redemarre et verifie :
 
 ```bash
-docker restart openclaw-gateway && sleep 5 && docker exec openclaw-gateway openclaw channel telegram status
+docker restart phoenix-gateway && sleep 5 && docker exec phoenix-gateway phoenix channel telegram status
 ```
 
 **Vérification :**
@@ -153,7 +153,7 @@ Genere le lien d'invitation :
 Configure le channel Discord :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -176,12 +176,12 @@ nano ~/.openclaw/openclaw.json
 Redemarre le gateway :
 
 ```bash
-docker restart openclaw-gateway
+docker restart phoenix-gateway
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw channel discord status
+docker exec phoenix-gateway phoenix channel discord status
 ```
 
 Envoie `!claw bonjour` dans un channel autorise.
@@ -191,7 +191,7 @@ Envoie `!claw bonjour` dans un channel autorise.
 ### Étape 4 : Configurer iMessage (macOS)
 
 **Pourquoi ?**
-Sur macOS, OpenClaw peut repondre aux iMessages. Cette fonctionnalite utilise AppleScript et necessite des permissions speciales.
+Sur macOS, Phoenix peut repondre aux iMessages. Cette fonctionnalite utilise AppleScript et necessite des permissions speciales.
 
 **Comment ?**
 
@@ -203,7 +203,7 @@ Accorde les permissions :
 Configure le channel iMessage :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -223,12 +223,12 @@ nano ~/.openclaw/openclaw.json
 Active le service iMessage :
 
 ```bash
-docker exec openclaw-gateway openclaw channel imessage enable
+docker exec phoenix-gateway phoenix channel imessage enable
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw channel imessage status
+docker exec phoenix-gateway phoenix channel imessage status
 ```
 
 Envoie un iMessage depuis un contact autorise. La reponse devrait arriver automatiquement.
@@ -238,14 +238,14 @@ Envoie un iMessage depuis un contact autorise. La reponse devrait arriver automa
 ### Étape 5 : Gerer plusieurs channels simultanement
 
 **Pourquoi ?**
-Tu peux utiliser tous les channels en meme temps. OpenClaw route les messages vers le bon provider LLM et renvoie les reponses au bon channel.
+Tu peux utiliser tous les channels en meme temps. Phoenix route les messages vers le bon provider LLM et renvoie les reponses au bon channel.
 
 **Comment ?**
 
 Voici une configuration complete multi-channel :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -254,7 +254,7 @@ nano ~/.openclaw/openclaw.json
     "whatsapp": {
       "enabled": true,
       "adapter": "baileys",
-      "sessionPath": "~/.openclaw/whatsapp-session"
+      "sessionPath": "~/.phoenix/whatsapp-session"
     },
     "telegram": {
       "enabled": true,
@@ -285,7 +285,7 @@ nano ~/.openclaw/openclaw.json
 Verifie tous les channels :
 
 ```bash
-docker exec openclaw-gateway openclaw channels list
+docker exec phoenix-gateway phoenix channels list
 ```
 
 **Vérification :**
@@ -303,7 +303,7 @@ Tous les channels actives doivent afficher `"connected": true`.
 - [ ] Telegram : Bot cree via BotFather et token configure
 - [ ] Discord : Application creee et bot invite sur le serveur
 - [ ] iMessage : Permissions accordees (macOS uniquement)
-- [ ] Configuration JSON valide dans `~/.openclaw/openclaw.json`
+- [ ] Configuration JSON valide dans `~/.phoenix/phoenix.json`
 - [ ] Gateway redemarre sans erreur
 - [ ] Chaque channel repond aux messages de test
 
@@ -317,7 +317,7 @@ Tous les channels actives doivent afficher `"connected": true`.
 
 **Solution :**
 ```bash
-docker exec -it openclaw-gateway openclaw channel whatsapp reconnect
+docker exec -it phoenix-gateway phoenix channel whatsapp reconnect
 ```
 
 ---
@@ -348,7 +348,7 @@ docker exec -it openclaw-gateway openclaw channel whatsapp reconnect
 
 **Solution :**
 ```bash
-docker logs openclaw-gateway | grep telegram
+docker logs phoenix-gateway | grep telegram
 ```
 
 Verifie que ton user ID est dans `allowedUsers`.

@@ -3,7 +3,7 @@
 ## 📋 Ce que tu vas apprendre
 
 - La différence entre Docker et Kubernetes
-- Pourquoi on utilise les deux pour OpenClaw
+- Pourquoi on utilise les deux pour Phoenix
 - Les avantages de k3s sur Mac
 - Les limitations à connaître
 
@@ -34,7 +34,7 @@ Imagine que tu veux transporter un poisson :
 │          Container Docker           │
 │                                     │
 │  ┌─────────────────────────────┐   │
-│  │         OpenClaw            │   │
+│  │         Phoenix            │   │
 │  │  + Node.js 22               │   │
 │  │  + npm packages             │   │
 │  │  + fichiers config          │   │
@@ -64,7 +64,7 @@ Imagine que tu as 10 aquariums (containers) :
 ┌─────────────────────────────────────────────────────────┐
 │                    Kubernetes (k3s)                      │
 │                                                          │
-│  "Hé, OpenClaw a planté !"                              │
+│  "Hé, Phoenix a planté !"                              │
 │           │                                              │
 │           ▼                                              │
 │  "Pas de problème, je le redémarre automatiquement"     │
@@ -81,7 +81,7 @@ Imagine que tu as 10 aquariums (containers) :
 
 ### Docker seul : pas assez
 
-Avec Docker seul (docker-compose), tu peux lancer OpenClaw. MAIS :
+Avec Docker seul (docker-compose), tu peux lancer Phoenix. MAIS :
 
 | Problème | Sans Kubernetes | Avec Kubernetes |
 |----------|-----------------|-----------------|
@@ -179,7 +179,7 @@ resources:
     cpu: "500m"     # 0.5 core minimum
 ```
 
-**OpenClaw ne peut pas consommer toutes les ressources du Mac.**
+**Phoenix ne peut pas consommer toutes les ressources du Mac.**
 
 ---
 
@@ -194,7 +194,7 @@ resources:
 
 **La solution :**
 - LLM (Ollama, LM Studio) = NATIF (accès GPU)
-- OpenClaw = Dans Kubernetes (isolation)
+- Phoenix = Dans Kubernetes (isolation)
 - Communication via `host.docker.internal`
 
 ### Pas de "vrai" réseau host
@@ -211,9 +211,9 @@ Pour persister sur le Mac réel, on utilise des `hostPath` mappés.
 
 ```yaml
 volumes:
-  - name: openclaw-data
+  - name: phoenix-data
     hostPath:
-      path: /Users/ethan/.openclaw  # Chemin Mac réel
+      path: /Users/ethan/.phoenix  # Chemin Mac réel
       type: DirectoryOrCreate
 ```
 
@@ -223,7 +223,7 @@ volumes:
 
 | Option | Sécurité | Complexité | Performance | Recommandé |
 |--------|----------|------------|-------------|------------|
-| **OpenClaw natif** | ⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ❌ |
+| **Phoenix natif** | ⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ❌ |
 | **Docker seul** | ⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ❌ |
 | **Docker Desktop K8s** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ❌ |
 | **k3s** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ✅ |
@@ -264,7 +264,7 @@ volumes:
 │  RÉSULTAT :                                                     │
 │  • Privacy : tes données restent sur ton Mac                   │
 │  • Performance : GPU M3 Ultra à 100%                           │
-│  • Sécurité : OpenClaw ne peut pas compromettre ton Mac        │
+│  • Sécurité : Phoenix ne peut pas compromettre ton Mac        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -277,7 +277,7 @@ volumes:
 - [ ] J'ai compris ce qu'est Kubernetes (orchestrateur)
 - [ ] J'ai compris pourquoi k3s est idéal pour Mac (léger mais complet)
 - [ ] J'ai compris les limitations GPU sur Mac (Metal non supporté dans containers)
-- [ ] J'ai compris pourquoi les LLM sont natifs et OpenClaw dans K8s
+- [ ] J'ai compris pourquoi les LLM sont natifs et Phoenix dans K8s
 
 ---
 
@@ -311,7 +311,7 @@ volumes:
 **🎉 Félicitations ! Tu as terminé la Partie 1 : Comprendre**
 
 Tu sais maintenant :
-- Ce qu'est OpenClaw et son histoire
+- Ce qu'est Phoenix et son histoire
 - Comment l'architecture est structurée
 - Pourquoi on utilise Kubernetes + Docker
 

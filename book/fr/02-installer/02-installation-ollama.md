@@ -45,7 +45,7 @@ ollama version 0.x.x
 
 ### Étape 2 : Démarrer le serveur Ollama
 
-**Pourquoi ?** Le serveur Ollama doit tourner en arrière-plan pour répondre aux requêtes d'OpenClaw.
+**Pourquoi ?** Le serveur Ollama doit tourner en arrière-plan pour répondre aux requêtes d'Phoenix.
 
 **Comment (GUI) :**
 1. Ouvre l'application Ollama depuis Applications
@@ -175,7 +175,7 @@ Une réponse en quelques secondes, par exemple :
 Bonjour ! Je suis ravi de vous rencontrer.
 ```
 
-**Test via l'API (comme OpenClaw va l'utiliser) :**
+**Test via l'API (comme Phoenix va l'utiliser) :**
 ```bash
 curl -s http://localhost:11434/api/generate -d '{"model": "llama3.2:3b", "prompt": "Réponds en un mot: 2+2=", "stream": false}' | jq -r '.response'
 ```
@@ -211,9 +211,9 @@ L'utilisation GPU doit augmenter pendant la génération.
 
 ---
 
-### Étape 7 : Télécharger les modèles recommandés pour OpenClaw
+### Étape 7 : Télécharger les modèles recommandés pour Phoenix
 
-**Pourquoi ?** OpenClaw fonctionne mieux avec certains modèles. On va télécharger ceux recommandés.
+**Pourquoi ?** Phoenix fonctionne mieux avec certains modèles. On va télécharger ceux recommandés.
 
 **Modèle principal - Llama 3.1 70B (nécessite 64+ GB RAM) :**
 ```bash
@@ -256,45 +256,45 @@ llama3.2:3b         xxxxx           2.0 GB    x minutes ago
 
 ---
 
-### Étape 8 : Créer un Modelfile personnalisé pour OpenClaw
+### Étape 8 : Créer un Modelfile personnalisé pour Phoenix
 
-**Pourquoi ?** On peut créer un modèle personnalisé avec des paramètres optimisés pour OpenClaw.
+**Pourquoi ?** On peut créer un modèle personnalisé avec des paramètres optimisés pour Phoenix.
 
 **Comment ?**
 ```bash
-cat << 'EOF' > ~/openclaw/config/Modelfile.openclaw
+cat << 'EOF' > ~/phoenix/config/Modelfile.phoenix
 FROM llama3.1:8b
 
-# Paramètres optimisés pour OpenClaw
+# Paramètres optimisés pour Phoenix
 PARAMETER temperature 0.7
 PARAMETER top_p 0.9
 PARAMETER top_k 40
 PARAMETER num_ctx 8192
 PARAMETER repeat_penalty 1.1
 
-# Prompt système pour OpenClaw
-SYSTEM """Tu es un assistant IA intégré à OpenClaw, une plateforme de développement sécurisée. Tu aides les développeurs avec leur code, leurs questions techniques et leurs projets. Tu réponds toujours en français quand on te parle en français. Tu es précis, concis et professionnel."""
+# Prompt système pour Phoenix
+SYSTEM """Tu es un assistant IA intégré à Phoenix, une plateforme de développement sécurisée. Tu aides les développeurs avec leur code, leurs questions techniques et leurs projets. Tu réponds toujours en français quand on te parle en français. Tu es précis, concis et professionnel."""
 EOF
 ```
 
 **Créer le modèle personnalisé :**
 ```bash
-ollama create openclaw-assistant -f ~/openclaw/config/Modelfile.openclaw
+ollama create phoenix-assistant -f ~/phoenix/config/Modelfile.phoenix
 ```
 
 **Vérification :**
 ```bash
-ollama list | grep openclaw
+ollama list | grep phoenix
 ```
 
 **Résultat attendu :**
 ```
-openclaw-assistant    xxxxx    4.7 GB    Just now
+phoenix-assistant    xxxxx    4.7 GB    Just now
 ```
 
 **Tester le modèle personnalisé :**
 ```bash
-ollama run openclaw-assistant "Qui es-tu ?"
+ollama run phoenix-assistant "Qui es-tu ?"
 ```
 
 ---
@@ -350,9 +350,9 @@ launchctl list | grep ollama
 
 **Comment ?**
 ```bash
-cat << 'EOF' > ~/openclaw/test-ollama.sh
+cat << 'EOF' > ~/phoenix/test-ollama.sh
 #!/bin/bash
-echo "=== Test Ollama pour OpenClaw ==="
+echo "=== Test Ollama pour Phoenix ==="
 echo ""
 
 # Test 1: Serveur actif
@@ -392,17 +392,17 @@ echo "   Temps de réponse: ${DURATION}ms"
 echo ""
 echo "=== Tests terminés ==="
 EOF
-chmod +x ~/openclaw/test-ollama.sh
+chmod +x ~/phoenix/test-ollama.sh
 ```
 
 **Exécuter les tests :**
 ```bash
-~/openclaw/test-ollama.sh
+~/phoenix/test-ollama.sh
 ```
 
 **Résultat attendu :**
 ```
-=== Test Ollama pour OpenClaw ===
+=== Test Ollama pour Phoenix ===
 
 1. Vérification du serveur...
    ✅ Serveur Ollama actif sur le port 11434

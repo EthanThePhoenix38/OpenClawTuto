@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Script d'installation k3s pour OpenClaw
+# Script d'installation k3s pour Phoenix
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
 # Description: Installation et configuration de k3s sur Mac/Linux
@@ -241,7 +241,7 @@ install_k3s_macos() {
     echo ""
     echo "  2. k3d (k3s dans Docker)"
     echo "     brew install k3d"
-    echo "     k3d cluster create openclaw --api-port 6443 -p '18789:18789@loadbalancer'"
+    echo "     k3d cluster create phoenix --api-port 6443 -p '18789:18789@loadbalancer'"
     echo ""
     echo "  3. Docker Desktop Kubernetes"
     echo "     Activer Kubernetes dans les préférences Docker Desktop"
@@ -285,18 +285,18 @@ create_k3d_cluster() {
     log INFO "Création du cluster k3d..."
 
     # Vérifier si le cluster existe déjà
-    if k3d cluster list 2>/dev/null | grep -q "openclaw"; then
-        log WARN "Le cluster 'openclaw' existe déjà"
+    if k3d cluster list 2>/dev/null | grep -q "phoenix"; then
+        log WARN "Le cluster 'phoenix' existe déjà"
         read -rp "Voulez-vous le supprimer et recréer ? [y/N] " response
         if [[ "$response" =~ ^[Yy]$ ]]; then
-            k3d cluster delete openclaw
+            k3d cluster delete phoenix
         else
             return 0
         fi
     fi
 
     # Créer le cluster
-    k3d cluster create openclaw \
+    k3d cluster create phoenix \
         --api-port 6443 \
         --servers 1 \
         --agents 0 \
@@ -306,12 +306,12 @@ create_k3d_cluster() {
         --k3s-arg "--disable=servicelb@server:0" \
         --wait
 
-    log OK "Cluster k3d 'openclaw' créé"
+    log OK "Cluster k3d 'phoenix' créé"
 
     # Configurer kubectl
-    k3d kubeconfig merge openclaw --kubeconfig-switch-context
+    k3d kubeconfig merge phoenix --kubeconfig-switch-context
 
-    log OK "kubectl configuré pour le cluster 'openclaw'"
+    log OK "kubectl configuré pour le cluster 'phoenix'"
 }
 
 # -----------------------------------------------------------------------------
@@ -337,19 +337,19 @@ post_install() {
     kubectl get nodes -o wide
     echo ""
 
-    # Créer le namespace openclaw
-    if ! kubectl get namespace openclaw &> /dev/null; then
-        kubectl create namespace openclaw
-        log OK "Namespace 'openclaw' créé"
+    # Créer le namespace phoenix
+    if ! kubectl get namespace phoenix &> /dev/null; then
+        kubectl create namespace phoenix
+        log OK "Namespace 'phoenix' créé"
     else
-        log OK "Namespace 'openclaw' existe déjà"
+        log OK "Namespace 'phoenix' existe déjà"
     fi
 
     log OK "Installation terminée !"
     echo ""
     echo "Prochaines étapes :"
     echo "  1. Configurer Ollama : ./setup-ollama.sh"
-    echo "  2. Déployer OpenClaw : ./deploy-openclaw.sh"
+    echo "  2. Déployer Phoenix : ./deploy-phoenix.sh"
     echo ""
     echo "Logs de l'installation : $LOG_FILE"
 }
@@ -374,7 +374,7 @@ uninstall_k3s() {
     else
         # macOS avec k3d
         if check_command k3d; then
-            k3d cluster delete openclaw 2>/dev/null || true
+            k3d cluster delete phoenix 2>/dev/null || true
             log OK "Cluster k3d supprimé"
         fi
     fi
@@ -386,7 +386,7 @@ uninstall_k3s() {
 
 main() {
     echo "=============================================="
-    echo " Installation k3s pour OpenClaw"
+    echo " Installation k3s pour Phoenix"
     echo " Version: 1.0.0"
     echo "=============================================="
     echo ""

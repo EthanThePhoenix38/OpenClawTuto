@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Script de configuration Ollama pour OpenClaw
+# Script de configuration Ollama pour Phoenix
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
 # Description: Installation et configuration d'Ollama sur Mac/Linux
@@ -289,7 +289,7 @@ download_models() {
     fi
 
     echo ""
-    echo "Modèles recommandés pour OpenClaw :"
+    echo "Modèles recommandés pour Phoenix :"
     echo ""
 
     local i=1
@@ -492,11 +492,11 @@ benchmark_gpu() {
 }
 
 # -----------------------------------------------------------------------------
-# Configuration pour OpenClaw
+# Configuration pour Phoenix
 # -----------------------------------------------------------------------------
 
-configure_for_openclaw() {
-    log STEP "Configuration pour OpenClaw..."
+configure_for_phoenix() {
+    log STEP "Configuration pour Phoenix..."
 
     # Vérifier qu'Ollama tourne
     if ! curl -s http://localhost:11434/api/tags &> /dev/null; then
@@ -518,7 +518,7 @@ configure_for_openclaw() {
 
     # Afficher la configuration
     echo ""
-    log OK "Configuration Ollama pour OpenClaw :"
+    log OK "Configuration Ollama pour Phoenix :"
     echo ""
     echo "  OLLAMA_HOST=http://localhost:11434"
     echo "  (ou http://host.docker.internal:11434 depuis un container)"
@@ -551,7 +551,7 @@ Options:
   --gpu             Vérifier le support GPU
   --start           Démarrer Ollama
   --stop            Arrêter Ollama
-  --configure       Configurer pour OpenClaw
+  --configure       Configurer pour Phoenix
   --help            Afficher cette aide
 
 Exemples:
@@ -563,7 +563,7 @@ EOF
 
 main() {
     echo "=============================================="
-    echo " Configuration Ollama pour OpenClaw"
+    echo " Configuration Ollama pour Phoenix"
     echo " Version: 1.0.0"
     echo "=============================================="
     echo ""
@@ -576,7 +576,7 @@ main() {
             start_ollama
             echo ""
             download_models
-            configure_for_openclaw
+            configure_for_phoenix
             ;;
         --models)
             download_models
@@ -597,7 +597,7 @@ main() {
             log OK "Ollama arrêté"
             ;;
         --configure)
-            configure_for_openclaw
+            configure_for_phoenix
             ;;
         --help|-h)
             usage

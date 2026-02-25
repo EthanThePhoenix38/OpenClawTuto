@@ -2,11 +2,11 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas connecter OpenClaw a n8n pour creer des workflows d'automatisation puissants. n8n permet d'orchestrer des taches complexes en combinant OpenClaw avec des centaines d'applications.
+Dans ce chapitre, tu vas connecter Phoenix a n8n pour creer des workflows d'automatisation puissants. n8n permet d'orchestrer des taches complexes en combinant Phoenix avec des centaines d'applications.
 
 **Objectifs :**
 - Installer n8n sur ton Mac Studio
-- Connecter n8n au gateway OpenClaw
+- Connecter n8n au gateway Phoenix
 - Creer un workflow d'automatisation
 - Declencher des workflows via les channels
 
@@ -16,7 +16,7 @@ Dans ce chapitre, tu vas connecter OpenClaw a n8n pour creer des workflows d'aut
 
 | Composant | Requis | Verification |
 |-----------|--------|--------------|
-| OpenClaw Gateway | Actif sur 18789 | `curl http://localhost:18789/api/health` |
+| Phoenix Gateway | Actif sur 18789 | `curl http://localhost:18789/api/health` |
 | Docker | Installe | `docker --version` |
 | Port 5678 | Disponible | `lsof -i :5678` |
 
@@ -43,7 +43,7 @@ Lance n8n :
 docker run -d --name n8n --restart unless-stopped -p 5678:5678 -v n8n_data:/home/node/.n8n --network host docker.n8n.io/n8nio/n8n
 ```
 
-Note : `--network host` permet a n8n d'acceder facilement au gateway OpenClaw.
+Note : `--network host` permet a n8n d'acceder facilement au gateway Phoenix.
 
 **Vérification :**
 ```bash
@@ -54,10 +54,10 @@ Ouvre http://localhost:5678 dans ton navigateur. Cree un compte admin lors du pr
 
 ---
 
-### Étape 2 : Configurer le node OpenClaw dans n8n
+### Étape 2 : Configurer le node Phoenix dans n8n
 
 **Pourquoi ?**
-n8n utilise des "nodes" pour communiquer avec les services externes. Tu vas configurer un node HTTP pour appeler l'API OpenClaw.
+n8n utilise des "nodes" pour communiquer avec les services externes. Tu vas configurer un node HTTP pour appeler l'API Phoenix.
 
 **Comment ?**
 
@@ -65,18 +65,18 @@ Dans n8n :
 1. Clique sur **Settings** (engrenage) > **Credentials**
 2. Clique **Add Credential** > **HTTP Header Auth**
 3. Configure :
-   - Name : `OpenClaw API`
+   - Name : `Phoenix API`
    - Header Name : `Authorization`
-   - Header Value : `Bearer ton-token-openclaw`
+   - Header Value : `Bearer ton-token-phoenix`
 
-Cree le credential OpenClaw :
+Cree le credential Phoenix :
 1. Va dans **Credentials** > **Add Credential**
 2. Cherche **HTTP Request**
 3. Configure :
-   - Name : `OpenClaw Gateway`
+   - Name : `Phoenix Gateway`
    - Authentication : Generic Credential Type
    - Generic Auth Type : Header Auth
-   - Header Auth : selectionne `OpenClaw API`
+   - Header Auth : selectionne `Phoenix API`
 
 **Vérification :**
 
@@ -96,7 +96,7 @@ Tu dois voir le statut du gateway.
 ### Étape 3 : Creer un workflow d'analyse d'email
 
 **Pourquoi ?**
-Ce workflow montre comment combiner OpenClaw avec d'autres services : recevoir un email, l'analyser avec le LLM, et envoyer une notification.
+Ce workflow montre comment combiner Phoenix avec d'autres services : recevoir un email, l'analyser avec le LLM, et envoyer une notification.
 
 **Comment ?**
 
@@ -109,7 +109,7 @@ Cree un nouveau workflow et ajoute ces nodes :
 - Password : mot de passe application
 - Mailbox : INBOX
 
-**2. Analyse OpenClaw**
+**2. Analyse Phoenix**
 - Node : **HTTP Request**
 - Method : POST
 - URL : `http://localhost:18789/api/chat`
@@ -158,10 +158,10 @@ Cree un workflow avec trigger webhook :
 **1. Webhook Trigger**
 - Node : **Webhook**
 - HTTP Method : POST
-- Path : `openclaw-trigger`
+- Path : `phoenix-trigger`
 - Authentication : Header Auth (optionnel)
 
-Note l'URL du webhook (ex: `http://localhost:5678/webhook/openclaw-trigger`).
+Note l'URL du webhook (ex: `http://localhost:5678/webhook/phoenix-trigger`).
 
 **2. Process Command**
 - Node : **Code**
@@ -188,10 +188,10 @@ return [{
 
 **4. Actions specifiques pour chaque branche**
 
-Configure OpenClaw pour appeler ce webhook :
+Configure Phoenix pour appeler ce webhook :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -199,7 +199,7 @@ nano ~/.openclaw/openclaw.json
   "webhooks": {
     "n8n": {
       "enabled": true,
-      "url": "http://localhost:5678/webhook/openclaw-trigger",
+      "url": "http://localhost:5678/webhook/phoenix-trigger",
       "triggers": ["/workflow", "/rapport", "/backup", "/stats"],
       "includeContext": true
     }
@@ -210,7 +210,7 @@ nano ~/.openclaw/openclaw.json
 Redemarre le gateway :
 
 ```bash
-docker restart openclaw-gateway
+docker restart phoenix-gateway
 ```
 
 **Vérification :**
@@ -249,7 +249,7 @@ Cree un workflow "Agent de Recherche" :
 - Options :
   - Loop Count : `{{ $json.maxIterations }}`
 
-**4. Appel OpenClaw dans la boucle**
+**4. Appel Phoenix dans la boucle**
 - Node : **HTTP Request**
 - URL : `http://localhost:18789/api/chat`
 - Body :
@@ -284,7 +284,7 @@ curl -X POST http://localhost:5678/webhook/agent-recherche -H "Content-Type: app
 
 - [ ] n8n installe et accessible sur http://localhost:5678
 - [ ] Compte admin cree
-- [ ] Credentials OpenClaw configures
+- [ ] Credentials Phoenix configures
 - [ ] Workflow basique HTTP Request fonctionne
 - [ ] Workflow d'analyse email cree
 - [ ] Webhook de trigger configure
@@ -294,7 +294,7 @@ curl -X POST http://localhost:5678/webhook/agent-recherche -H "Content-Type: app
 
 ## ⚠️ Dépannage
 
-### Erreur : "Connection refused" vers OpenClaw
+### Erreur : "Connection refused" vers Phoenix
 
 **Cause :** n8n ne peut pas atteindre le gateway.
 
@@ -357,10 +357,10 @@ Dans le node HTTP Request :
 | Nodes disponibles | https://n8n.io/integrations |
 | Templates n8n | https://n8n.io/workflows |
 | Community n8n | https://community.n8n.io |
-| API OpenClaw | https://docs.openclaw.ai/api |
+| API Phoenix | https://docs.phoenix.ai/api |
 
 ---
 
 ## ➡️ Prochaine étape
 
-Tu maitrises l'automatisation avec n8n ! Dans le dernier chapitre de cette partie, tu vas integrer OpenClaw avec tes **outils de developpement** : [4.5 - Integrations Dev Tools](./05-integrations-dev-tools.md).
+Tu maitrises l'automatisation avec n8n ! Dans le dernier chapitre de cette partie, tu vas integrer Phoenix avec tes **outils de developpement** : [4.5 - Integrations Dev Tools](./05-integrations-dev-tools.md).

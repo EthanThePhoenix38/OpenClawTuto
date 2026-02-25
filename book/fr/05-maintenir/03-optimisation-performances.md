@@ -2,7 +2,7 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas optimiser OpenClaw pour tirer le maximum de ton Mac Studio M3 Ultra. Tu apprendras a configurer la RAM, exploiter le GPU Metal, et mettre en place un cache intelligent.
+Dans ce chapitre, tu vas optimiser Phoenix pour tirer le maximum de ton Mac Studio M3 Ultra. Tu apprendras a configurer la RAM, exploiter le GPU Metal, et mettre en place un cache intelligent.
 
 **Objectifs :**
 - Optimiser l'allocation memoire pour les LLM
@@ -19,7 +19,7 @@ Dans ce chapitre, tu vas optimiser OpenClaw pour tirer le maximum de ton Mac Stu
 |-----------|--------|--------------|
 | Mac Studio M3 Ultra | - | `system_profiler SPHardwareDataType` |
 | RAM | 64 Go+ recommande | `sysctl hw.memsize` |
-| OpenClaw | v2026.1.30 | `docker exec openclaw-gateway openclaw --version` |
+| Phoenix | v2026.1.30 | `docker exec phoenix-gateway phoenix --version` |
 | Ollama | 0.3+ | `ollama --version` |
 
 ---
@@ -33,10 +33,10 @@ Avant d'optimiser, tu dois connaitre l'etat actuel. Un benchmark de reference te
 
 **Comment ?**
 
-Execute le benchmark OpenClaw :
+Execute le benchmark Phoenix :
 
 ```bash
-docker exec openclaw-gateway openclaw benchmark --full > ~/benchmark-before.txt
+docker exec phoenix-gateway phoenix benchmark --full > ~/benchmark-before.txt
 ```
 
 Mesure le throughput Ollama :
@@ -97,10 +97,10 @@ Parametres expliques :
 - `FLASH_ATTENTION` : optimisation attention
 - `KV_CACHE_TYPE` : compression du cache
 
-**Configure le garbage collector Go (pour OpenClaw) :**
+**Configure le garbage collector Go (pour Phoenix) :**
 
 ```bash
-nano ~/.openclaw/docker-compose.yml
+nano ~/.phoenix/docker-compose.yml
 ```
 
 Ajoute dans environment :
@@ -114,12 +114,12 @@ environment:
 Redemarre :
 
 ```bash
-docker compose -f ~/.openclaw/docker-compose.yml up -d
+docker compose -f ~/.phoenix/docker-compose.yml up -d
 ```
 
 **Vérification :**
 ```bash
-docker stats openclaw-gateway --no-stream --format "{{.MemUsage}}"
+docker stats phoenix-gateway --no-stream --format "{{.MemUsage}}"
 ```
 
 ---
@@ -189,10 +189,10 @@ Le cache stocke les reponses frequentes et les embeddings precalcules. Ca reduit
 
 **Comment ?**
 
-**Active le cache OpenClaw :**
+**Active le cache Phoenix :**
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -205,7 +205,7 @@ nano ~/.openclaw/openclaw.json
       "ttl": 3600
     },
     "disk": {
-      "path": "~/.openclaw/cache",
+      "path": "~/.phoenix/cache",
       "maxSize": "50GB",
       "ttl": 86400
     },
@@ -283,17 +283,17 @@ Le monitoring permet de detecter les degradations de performance et d'ajuster le
 **Script de monitoring temps reel :**
 
 ```bash
-cat > ~/monitor-openclaw.sh << 'EOF'
+cat > ~/monitor-phoenix.sh << 'EOF'
 #!/bin/bash
 while true; do
     clear
-    echo "=== OpenClaw Monitor $(date) ==="
+    echo "=== Phoenix Monitor $(date) ==="
     echo ""
     echo "--- Gateway Health ---"
     curl -s http://localhost:18789/api/health | jq '{status, uptime, requests_total}'
     echo ""
     echo "--- Docker Stats ---"
-    docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" | grep openclaw
+    docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" | grep phoenix
     echo ""
     echo "--- Ollama ---"
     curl -s http://localhost:11434/api/tags | jq '.models | length' | xargs -I {} echo "Models loaded: {}"
@@ -307,13 +307,13 @@ while true; do
     sleep 5
 done
 EOF
-chmod +x ~/monitor-openclaw.sh
+chmod +x ~/monitor-phoenix.sh
 ```
 
 Lance le monitoring :
 
 ```bash
-~/monitor-openclaw.sh
+~/monitor-phoenix.sh
 ```
 
 **Alertes de performance :**
@@ -325,8 +325,8 @@ THRESHOLD_CPU=90
 THRESHOLD_MEM=85
 THRESHOLD_LATENCY=5000
 
-CPU=$(docker stats --no-stream --format "{{.CPUPerc}}" openclaw-gateway | tr -d '%')
-MEM=$(docker stats --no-stream --format "{{.MemPerc}}" openclaw-gateway | tr -d '%')
+CPU=$(docker stats --no-stream --format "{{.CPUPerc}}" phoenix-gateway | tr -d '%')
+MEM=$(docker stats --no-stream --format "{{.MemPerc}}" phoenix-gateway | tr -d '%')
 LATENCY=$(curl -s -w "%{time_total}" -o /dev/null http://localhost:18789/api/health | awk '{print $1*1000}')
 
 if (( $(echo "$CPU > $THRESHOLD_CPU" | bc -l) )); then
@@ -347,7 +347,7 @@ chmod +x ~/alert-performance.sh
 Ajoute au crontab :
 
 ```bash
-(crontab -l 2>/dev/null; echo "*/5 * * * * ~/alert-performance.sh >> ~/.openclaw/alerts.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "*/5 * * * * ~/alert-performance.sh >> ~/.phoenix/alerts.log 2>&1") | crontab -
 ```
 
 **Vérification :**
@@ -367,7 +367,7 @@ La comparaison quantifie l'impact de tes optimisations et identifie les gains le
 Execute le meme benchmark qu'a l'etape 1 :
 
 ```bash
-docker exec openclaw-gateway openclaw benchmark --full > ~/benchmark-after.txt
+docker exec phoenix-gateway phoenix benchmark --full > ~/benchmark-after.txt
 ```
 
 Compare les resultats :
@@ -380,7 +380,7 @@ Cree un rapport :
 
 ```bash
 cat > ~/optimization-report.md << EOF
-# Rapport d'Optimisation OpenClaw
+# Rapport d'Optimisation Phoenix
 
 Date: $(date)
 Machine: Mac Studio M3 Ultra
@@ -526,13 +526,13 @@ top -o cpu
 Redemarre periodiquement :
 
 ```bash
-docker restart openclaw-gateway
+docker restart phoenix-gateway
 ```
 
 Ou ajoute un cron de maintenance :
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 3 * * * docker restart openclaw-gateway") | crontab -
+(crontab -l 2>/dev/null; echo "0 3 * * * docker restart phoenix-gateway") | crontab -
 ```
 
 ---
@@ -545,23 +545,23 @@ Ou ajoute un cron de maintenance :
 | Apple Metal | https://developer.apple.com/metal/ |
 | Docker Resources | https://docs.docker.com/desktop/settings/mac/#resources |
 | M3 Specifications | https://www.apple.com/mac-studio/specs/ |
-| OpenClaw Tuning | https://docs.openclaw.ai/performance |
+| Phoenix Tuning | https://docs.phoenix.ai/performance |
 
 ---
 
 ## ➡️ Conclusion
 
-Felicitations ! Tu as termine le guide OpenClaw sur Mac Studio M3 Ultra. Tu sais maintenant :
+Felicitations ! Tu as termine le guide Phoenix sur Mac Studio M3 Ultra. Tu sais maintenant :
 
-- Installer et configurer OpenClaw
+- Installer et configurer Phoenix
 - Securiser ton installation
 - Connecter des LLM locaux et des channels de messagerie
 - Etendre les fonctionnalites avec skills et workflows
 - Maintenir et optimiser les performances
 
 **Pour aller plus loin :**
-- Rejoins la communaute OpenClaw : https://community.openclaw.ai
-- Contribue au projet : https://github.com/openclaw
+- Rejoins la communaute Phoenix : https://community.phoenix.ai
+- Contribue au projet : https://github.com/phoenix
 - Decouvre les skills avances sur ClawHub : https://clawhub.io
 
-Bonne utilisation d'OpenClaw !
+Bonne utilisation d'Phoenix !

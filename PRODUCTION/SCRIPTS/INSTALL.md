@@ -4,7 +4,7 @@
 # Auteur: Ethan Bernier
 # Version: 1.0.0
 # Date: 2026-02-02
-# Description: Désinstallation séquentielle (Mac) OpenClaw/k3s (namespace) + option suppression VM multipass. Sauvegarde avant action. Affiche et copie la sortie dans le presse-papier.
+# Description: Désinstallation séquentielle (Mac) Phoenix/k3s (namespace) + option suppression VM multipass. Sauvegarde avant action. Affiche et copie la sortie dans le presse-papier.
 
 set -euo pipefail
 
@@ -36,15 +36,15 @@ mkdir -p "${RUN_DIR}/backup"
   fi
 
   echo
-  echo "2) Suppression OpenClaw (namespace) — si kubectl disponible"
+  echo "2) Suppression Phoenix (namespace) — si kubectl disponible"
   if command -v kubectl >/dev/null 2>&1; then
     export KUBECONFIG="${KUBECONFIG_PATH}"
-    if kubectl get ns openclaw >/dev/null 2>&1; then
-      echo " - kubectl delete namespace openclaw"
-      kubectl delete namespace openclaw --wait=true || true
-      echo " - Namespace openclaw supprimé (ou en suppression)"
+    if kubectl get ns phoenix >/dev/null 2>&1; then
+      echo " - kubectl delete namespace phoenix"
+      kubectl delete namespace phoenix --wait=true || true
+      echo " - Namespace phoenix supprimé (ou en suppression)"
     else
-      echo " - Namespace openclaw absent"
+      echo " - Namespace phoenix absent"
     fi
   else
     echo " - kubectl NON INSTALLÉ, suppression namespace impossible"
@@ -83,7 +83,7 @@ mkdir -p "${RUN_DIR}/backup"
 
 ## INSTALLATION SEQUENTIELLE ##
 
-# Installation séquentielle — PODS (k3s + OpenClaw) — Mac (Mensuel / Reconstruction)
+# Installation séquentielle — PODS (k3s + Phoenix) — Mac (Mensuel / Reconstruction)
 Version: 1.0.0
 Date: 2026-02-02
 Exécution: macOS (Terminal) uniquement
@@ -158,14 +158,14 @@ Commande:
 Résultat attendu:
 - 1 node au moins en Ready
 
-## 7) Créer le namespace openclaw
+## 7) Créer le namespace phoenix
 Commande:
-- export KUBECONFIG="$HOME/.kube/k3s-config" && (kubectl get ns openclaw >/dev/null 2>&1 && echo "Namespace openclaw déjà présent" || kubectl create ns openclaw) 2>&1 | tee /dev/tty | pbcopy
+- export KUBECONFIG="$HOME/.kube/k3s-config" && (kubectl get ns phoenix >/dev/null 2>&1 && echo "Namespace phoenix déjà présent" || kubectl create ns phoenix) 2>&1 | tee /dev/tty | pbcopy
 
 Résultat attendu:
-- "namespace/openclaw created" ou "déjà présent"
+- "namespace/phoenix created" ou "déjà présent"
 
-## 8) Déployer OpenClaw (si manifests disponibles)
+## 8) Déployer Phoenix (si manifests disponibles)
 Hypothèse d’emplacement (repo):
 - /Users/ethanbernier/Library/CloudStorage/OneDrive-Phoenix/ClaudeCodeFolder/PRODUCTION/SCRIPTS/k8s/
 
@@ -177,7 +177,7 @@ Résultat attendu:
 - Aucun message d’erreur
 
 Vérification:
-- export KUBECONFIG="$HOME/.kube/k3s-config" && kubectl get pods -n openclaw -o wide 2>&1 | tee /dev/tty | pbcopy
+- export KUBECONFIG="$HOME/.kube/k3s-config" && kubectl get pods -n phoenix -o wide 2>&1 | tee /dev/tty | pbcopy
 
 Résultat attendu:
 - Pods en Running / Ready

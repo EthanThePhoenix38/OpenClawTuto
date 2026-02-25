@@ -2,10 +2,10 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas comprendre et implémenter l'isolation stricte entre OpenClaw (dans Kubernetes) et ton Mac Studio M3 Ultra. C'est la fondation de toute l'architecture de sécurité Zero Trust.
+Dans ce chapitre, tu vas comprendre et implémenter l'isolation stricte entre Phoenix (dans Kubernetes) et ton Mac Studio M3 Ultra. C'est la fondation de toute l'architecture de sécurité Zero Trust.
 
 - **Pourquoi isoler ?** Un agent IA peut exécuter du code arbitraire. Sans isolation, une erreur ou une injection malveillante pourrait compromettre tout ton système.
-- **Architecture cible** : OpenClaw tourne dans un namespace Kubernetes dédié, avec des restrictions sur les commandes, les chemins de fichiers et les ressources réseau.
+- **Architecture cible** : Phoenix tourne dans un namespace Kubernetes dédié, avec des restrictions sur les commandes, les chemins de fichiers et les ressources réseau.
 - **Principe clé** : Defense in Depth - plusieurs couches de protection qui se renforcent mutuellement.
 
 ## 🛠️ Prérequis
@@ -17,26 +17,26 @@ Dans ce chapitre, tu vas comprendre et implémenter l'isolation stricte entre Op
 
 ## 📝 Étapes détaillées
 
-### Étape 1 : Créer le namespace isolé pour OpenClaw
+### Étape 1 : Créer le namespace isolé pour Phoenix
 
 **Pourquoi ?** Un namespace Kubernetes crée une frontière logique qui limite la portée des ressources et des permissions. C'est le premier niveau d'isolation.
 
 **Comment ?**
 
 ```bash
-kubectl create namespace openclaw-sandbox
+kubectl create namespace phoenix-sandbox
 ```
 
 Applique des labels de sécurité au namespace :
 
 ```bash
-kubectl label namespace openclaw-sandbox security-level=high isolation=strict environment=production
+kubectl label namespace phoenix-sandbox security-level=high isolation=strict environment=production
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get namespace openclaw-sandbox --show-labels
+kubectl get namespace phoenix-sandbox --show-labels
 ```
 
 Tu dois voir les labels `security-level=high`, `isolation=strict` et `environment=production`.
@@ -47,17 +47,17 @@ Tu dois voir les labels `security-level=high`, `isolation=strict` et `environmen
 
 **Comment ?**
 
-Crée le fichier de configuration du Pod OpenClaw :
+Crée le fichier de configuration du Pod Phoenix :
 
 ```bash
-cat << 'EOF' > /tmp/openclaw-pod-security.yaml
+cat << 'EOF' > /tmp/phoenix-pod-security.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: openclaw-agent
-  namespace: openclaw-sandbox
+  name: phoenix-agent
+  namespace: phoenix-sandbox
   labels:
-    app: openclaw
+    app: phoenix
     security-tier: sandboxed
 spec:
   securityContext:
@@ -68,8 +68,8 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   containers:
-  - name: openclaw
-    image: openclaw:latest
+  - name: phoenix
+    image: phoenix:latest
     imagePullPolicy: IfNotPresent
     securityContext:
       allowPrivilegeEscalation: false
@@ -103,8 +103,8 @@ spec:
       sizeLimit: 1Gi
   - name: config
     configMap:
-      name: openclaw-config
-  serviceAccountName: openclaw-restricted
+      name: phoenix-config
+  serviceAccountName: phoenix-restricted
   automountServiceAccountToken: false
 EOF
 ```
@@ -112,7 +112,7 @@ EOF
 **Vérification :**
 
 ```bash
-kubectl apply --dry-run=client -f /tmp/openclaw-pod-security.yaml && echo "Configuration valide"
+kubectl apply --dry-run=client -f /tmp/phoenix-pod-security.yaml && echo "Configuration valide"
 ```
 
 ### Étape 3 : Créer le ServiceAccount restrictif
@@ -122,69 +122,69 @@ kubectl apply --dry-run=client -f /tmp/openclaw-pod-security.yaml && echo "Confi
 **Comment ?**
 
 ```bash
-cat << 'EOF' > /tmp/openclaw-serviceaccount.yaml
+cat << 'EOF' > /tmp/phoenix-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: openclaw-restricted
-  namespace: openclaw-sandbox
+  name: phoenix-restricted
+  namespace: phoenix-sandbox
 automountServiceAccountToken: false
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: openclaw-minimal-role
-  namespace: openclaw-sandbox
+  name: phoenix-minimal-role
+  namespace: phoenix-sandbox
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
-  resourceNames: ["openclaw-config"]
+  resourceNames: ["phoenix-config"]
   verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: openclaw-minimal-binding
-  namespace: openclaw-sandbox
+  name: phoenix-minimal-binding
+  namespace: phoenix-sandbox
 subjects:
 - kind: ServiceAccount
-  name: openclaw-restricted
-  namespace: openclaw-sandbox
+  name: phoenix-restricted
+  namespace: phoenix-sandbox
 roleRef:
   kind: Role
-  name: openclaw-minimal-role
+  name: phoenix-minimal-role
   apiGroup: rbac.authorization.k8s.io
 EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/openclaw-serviceaccount.yaml
+kubectl apply -f /tmp/phoenix-serviceaccount.yaml
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get serviceaccount openclaw-restricted -n openclaw-sandbox && kubectl get role,rolebinding -n openclaw-sandbox
+kubectl get serviceaccount phoenix-restricted -n phoenix-sandbox && kubectl get role,rolebinding -n phoenix-sandbox
 ```
 
 ### Étape 4 : Configurer le sandbox des commandes (allow-list)
 
-**Pourquoi ?** OpenClaw peut exécuter des commandes shell. On doit limiter strictement les commandes autorisées pour éviter l'exécution de code malveillant.
+**Pourquoi ?** Phoenix peut exécuter des commandes shell. On doit limiter strictement les commandes autorisées pour éviter l'exécution de code malveillant.
 
 **Comment ?**
 
 Crée la ConfigMap avec la liste blanche des commandes :
 
 ```bash
-cat << 'EOF' > /tmp/openclaw-sandbox-config.yaml
+cat << 'EOF' > /tmp/phoenix-sandbox-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openclaw-config
-  namespace: openclaw-sandbox
+  name: phoenix-config
+  namespace: phoenix-sandbox
 data:
   sandbox.yaml: |
-    # Configuration du Sandbox OpenClaw
+    # Configuration du Sandbox Phoenix
     version: "1.0"
 
     # Commandes autorisées (ALLOW-LIST STRICT)
@@ -314,23 +314,23 @@ data:
     network:
       allow_outbound: false
       proxy_required: true
-      proxy_url: "http://squid-proxy.openclaw-sandbox.svc.cluster.local:3128"
+      proxy_url: "http://squid-proxy.phoenix-sandbox.svc.cluster.local:3128"
 EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/openclaw-sandbox-config.yaml
+kubectl apply -f /tmp/phoenix-sandbox-config.yaml
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get configmap openclaw-config -n openclaw-sandbox -o yaml | head -50
+kubectl get configmap phoenix-config -n phoenix-sandbox -o yaml | head -50
 ```
 
 ### Étape 5 : Implémenter l'isolation des clés SSH
 
-**Pourquoi ?** Les clés SSH donnent accès à des serveurs distants. Elles ne doivent JAMAIS être accessibles depuis le sandbox OpenClaw, même en lecture.
+**Pourquoi ?** Les clés SSH donnent accès à des serveurs distants. Elles ne doivent JAMAIS être accessibles depuis le sandbox Phoenix, même en lecture.
 
 **Comment ?**
 
@@ -343,13 +343,13 @@ Cette protection est multi-couche :
 Vérifie que la configuration est correcte :
 
 ```bash
-kubectl get configmap openclaw-config -n openclaw-sandbox -o jsonpath='{.data.sandbox\.yaml}' | grep -A5 "sensitive_patterns"
+kubectl get configmap phoenix-config -n phoenix-sandbox -o jsonpath='{.data.sandbox\.yaml}' | grep -A5 "sensitive_patterns"
 ```
 
 **Vérification :**
 
 ```bash
-echo "Test : vérification que ~/.ssh n'est pas dans les volumes montés" && kubectl get pod openclaw-agent -n openclaw-sandbox -o jsonpath='{.spec.volumes[*].name}' 2>/dev/null || echo "Pod non encore déployé - configuration OK"
+echo "Test : vérification que ~/.ssh n'est pas dans les volumes montés" && kubectl get pod phoenix-agent -n phoenix-sandbox -o jsonpath='{.spec.volumes[*].name}' 2>/dev/null || echo "Pod non encore déployé - configuration OK"
 ```
 
 ### Étape 6 : Configurer les Pod Security Standards (PSS)
@@ -361,13 +361,13 @@ echo "Test : vérification que ~/.ssh n'est pas dans les volumes montés" && kub
 Applique le niveau "restricted" (le plus strict) :
 
 ```bash
-kubectl label namespace openclaw-sandbox pod-security.kubernetes.io/enforce=restricted pod-security.kubernetes.io/enforce-version=latest pod-security.kubernetes.io/warn=restricted pod-security.kubernetes.io/warn-version=latest pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/audit-version=latest --overwrite
+kubectl label namespace phoenix-sandbox pod-security.kubernetes.io/enforce=restricted pod-security.kubernetes.io/enforce-version=latest pod-security.kubernetes.io/warn=restricted pod-security.kubernetes.io/warn-version=latest pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/audit-version=latest --overwrite
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get namespace openclaw-sandbox -o jsonpath='{.metadata.labels}' | jq .
+kubectl get namespace phoenix-sandbox -o jsonpath='{.metadata.labels}' | jq .
 ```
 
 Tu dois voir `pod-security.kubernetes.io/enforce: restricted`.
@@ -386,7 +386,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: test-isolation
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   securityContext:
     runAsNonRoot: true
@@ -410,19 +410,19 @@ spec:
   volumes:
   - name: tmp
     emptyDir: {}
-  serviceAccountName: openclaw-restricted
+  serviceAccountName: phoenix-restricted
   automountServiceAccountToken: false
 EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/test-isolation.yaml && sleep 5 && kubectl get pod test-isolation -n openclaw-sandbox
+kubectl apply -f /tmp/test-isolation.yaml && sleep 5 && kubectl get pod test-isolation -n phoenix-sandbox
 ```
 
 **Vérification :**
 
 ```bash
-kubectl exec test-isolation -n openclaw-sandbox -- id && kubectl exec test-isolation -n openclaw-sandbox -- cat /etc/shadow 2>&1 | head -1
+kubectl exec test-isolation -n phoenix-sandbox -- id && kubectl exec test-isolation -n phoenix-sandbox -- cat /etc/shadow 2>&1 | head -1
 ```
 
 Tu dois voir `uid=1000` et une erreur de permission pour `/etc/shadow`.
@@ -430,22 +430,22 @@ Tu dois voir `uid=1000` et une erreur de permission pour `/etc/shadow`.
 Nettoie le Pod de test :
 
 ```bash
-kubectl delete pod test-isolation -n openclaw-sandbox --grace-period=0
+kubectl delete pod test-isolation -n phoenix-sandbox --grace-period=0
 ```
 
 ## ✅ Checklist
 
 Avant de passer au chapitre suivant, vérifie que :
 
-- [ ] Le namespace `openclaw-sandbox` existe avec les labels de sécurité
-- [ ] Le ServiceAccount `openclaw-restricted` est créé avec permissions minimales
-- [ ] La ConfigMap `openclaw-config` contient la configuration du sandbox
+- [ ] Le namespace `phoenix-sandbox` existe avec les labels de sécurité
+- [ ] Le ServiceAccount `phoenix-restricted` est créé avec permissions minimales
+- [ ] La ConfigMap `phoenix-config` contient la configuration du sandbox
 - [ ] Les Pod Security Standards sont appliqués au niveau "restricted"
 - [ ] Les clés SSH sont exclues de tout montage de volume
 - [ ] Le test d'isolation montre que root est impossible
 
 ```bash
-echo "=== Vérification complète ===" && kubectl get namespace openclaw-sandbox --show-labels && kubectl get serviceaccount,role,rolebinding -n openclaw-sandbox && kubectl get configmap openclaw-config -n openclaw-sandbox && echo "=== Isolation OK ==="
+echo "=== Vérification complète ===" && kubectl get namespace phoenix-sandbox --show-labels && kubectl get serviceaccount,role,rolebinding -n phoenix-sandbox && kubectl get configmap phoenix-config -n phoenix-sandbox && echo "=== Isolation OK ==="
 ```
 
 ## ⚠️ Dépannage
@@ -461,7 +461,7 @@ echo "=== Vérification complète ===" && kubectl get namespace openclaw-sandbox
 - `seccompProfile.type: RuntimeDefault`
 
 ```bash
-kubectl describe namespace openclaw-sandbox | grep -A10 "pod-security"
+kubectl describe namespace phoenix-sandbox | grep -A10 "pod-security"
 ```
 
 ### Erreur : "Permission denied" pour les volumes
@@ -471,7 +471,7 @@ kubectl describe namespace openclaw-sandbox | grep -A10 "pod-security"
 **Solution** : Assure-toi que `fsGroup` est défini dans le SecurityContext :
 
 ```bash
-kubectl get pod <nom-pod> -n openclaw-sandbox -o jsonpath='{.spec.securityContext.fsGroup}'
+kubectl get pod <nom-pod> -n phoenix-sandbox -o jsonpath='{.spec.securityContext.fsGroup}'
 ```
 
 ### Erreur : "ServiceAccount not found"
@@ -481,14 +481,14 @@ kubectl get pod <nom-pod> -n openclaw-sandbox -o jsonpath='{.spec.securityContex
 **Solution** : Recrée-le :
 
 ```bash
-kubectl apply -f /tmp/openclaw-serviceaccount.yaml
+kubectl apply -f /tmp/phoenix-serviceaccount.yaml
 ```
 
 ### Le sandbox ne bloque pas certaines commandes
 
-**Cause** : Le sandbox applicatif (OpenClaw) doit lire et appliquer la ConfigMap.
+**Cause** : Le sandbox applicatif (Phoenix) doit lire et appliquer la ConfigMap.
 
-**Solution** : Vérifie que le volume `config` est bien monté et que OpenClaw lit le fichier `sandbox.yaml` au démarrage.
+**Solution** : Vérifie que le volume `config` est bien monté et que Phoenix lit le fichier `sandbox.yaml` au démarrage.
 
 ## 🔗 Ressources
 
@@ -503,6 +503,6 @@ kubectl apply -f /tmp/openclaw-serviceaccount.yaml
 
 ## ➡️ Prochaine étape
 
-Maintenant que l'isolation de base est en place, nous allons configurer le **proxy Squid** pour contrôler strictement les accès réseau sortants. C'est la deuxième couche de défense qui empêche OpenClaw d'accéder à Internet sans autorisation explicite.
+Maintenant que l'isolation de base est en place, nous allons configurer le **proxy Squid** pour contrôler strictement les accès réseau sortants. C'est la deuxième couche de défense qui empêche Phoenix d'accéder à Internet sans autorisation explicite.
 
 Rendez-vous au [Chapitre 2 - Configuration du Proxy Squid](02-proxy-squid.md).

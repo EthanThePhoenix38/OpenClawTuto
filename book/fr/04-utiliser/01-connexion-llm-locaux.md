@@ -2,11 +2,11 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas configurer OpenClaw pour utiliser des modèles de langage locaux via Ollama et LM Studio. L'avantage ? Tes conversations restent 100% privées sur ton Mac Studio M3 Ultra, sans dépendre d'Internet ou de services cloud.
+Dans ce chapitre, tu vas configurer Phoenix pour utiliser des modèles de langage locaux via Ollama et LM Studio. L'avantage ? Tes conversations restent 100% privées sur ton Mac Studio M3 Ultra, sans dépendre d'Internet ou de services cloud.
 
 **Objectifs :**
-- Connecter Ollama (port 11434) à OpenClaw
-- Connecter LM Studio (port 1234) à OpenClaw
+- Connecter Ollama (port 11434) à Phoenix
+- Connecter LM Studio (port 1234) à Phoenix
 - Basculer dynamiquement entre les providers
 - Optimiser les performances pour le M3 Ultra
 
@@ -16,7 +16,7 @@ Dans ce chapitre, tu vas configurer OpenClaw pour utiliser des modèles de langa
 
 | Composant | Version | Vérification |
 |-----------|---------|--------------|
-| OpenClaw | v2026.1.30+ | `docker exec openclaw-gateway openclaw --version` |
+| Phoenix | v2026.1.30+ | `docker exec phoenix-gateway phoenix --version` |
 | Ollama | 0.3+ | `ollama --version` |
 | LM Studio | 0.3+ | Interface graphique lancée |
 | Modèle téléchargé | Au moins 1 | `ollama list` |
@@ -33,7 +33,7 @@ Dans ce chapitre, tu vas configurer OpenClaw pour utiliser des modèles de langa
 ### Étape 1 : Vérifier qu'Ollama fonctionne
 
 **Pourquoi ?**
-Avant de connecter OpenClaw, tu dois t'assurer qu'Ollama répond correctement aux requêtes API. Ollama expose une API REST compatible OpenAI sur le port 11434.
+Avant de connecter Phoenix, tu dois t'assurer qu'Ollama répond correctement aux requêtes API. Ollama expose une API REST compatible OpenAI sur le port 11434.
 
 **Comment ?**
 
@@ -64,17 +64,17 @@ Tu dois voir une réponse textuelle du modèle.
 
 ---
 
-### Étape 2 : Configurer Ollama dans OpenClaw
+### Étape 2 : Configurer Ollama dans Phoenix
 
 **Pourquoi ?**
-OpenClaw utilise `host.docker.internal` pour accéder aux services de l'hôte depuis les conteneurs Docker. Cette URL spéciale permet la communication entre le conteneur et ton Mac.
+Phoenix utilise `host.docker.internal` pour accéder aux services de l'hôte depuis les conteneurs Docker. Cette URL spéciale permet la communication entre le conteneur et ton Mac.
 
 **Comment ?**
 
 Ouvre le fichier de configuration :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 Ajoute ou modifie la section `providers` :
@@ -98,7 +98,7 @@ Ajoute ou modifie la section `providers` :
 Redémarre le gateway pour appliquer :
 
 ```bash
-docker restart openclaw-gateway
+docker restart phoenix-gateway
 ```
 
 **Vérification :**
@@ -128,10 +128,10 @@ Vérifie que le serveur répond :
 curl http://localhost:1234/v1/models
 ```
 
-Ajoute LM Studio dans la configuration OpenClaw :
+Ajoute LM Studio dans la configuration Phoenix :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -155,7 +155,7 @@ nano ~/.openclaw/openclaw.json
 
 **Vérification :**
 ```bash
-docker restart openclaw-gateway && sleep 5 && curl http://localhost:18789/api/health | jq '.providers'
+docker restart phoenix-gateway && sleep 5 && curl http://localhost:18789/api/health | jq '.providers'
 ```
 
 ---
@@ -176,13 +176,13 @@ curl -X POST http://localhost:18789/api/provider/switch -H "Content-Type: applic
 Via la commande CLI :
 
 ```bash
-docker exec openclaw-gateway openclaw provider use lmstudio
+docker exec phoenix-gateway phoenix provider use lmstudio
 ```
 
 Pour voir le provider actif :
 
 ```bash
-docker exec openclaw-gateway openclaw provider current
+docker exec phoenix-gateway phoenix provider current
 ```
 
 **Vérification :**
@@ -217,7 +217,7 @@ echo 'export OLLAMA_NUM_GPU=999' >> ~/.zshrc && source ~/.zshrc
 Ajuste les paramètres de contexte pour les grands modèles :
 
 ```bash
-nano ~/.openclaw/openclaw.json
+nano ~/.phoenix/phoenix.json
 ```
 
 ```json
@@ -256,8 +256,8 @@ Tu devrais voir un taux d'evaluation superieur a 30 tokens/seconde sur le M3 Ult
 - [ ] Ollama est installe et le service tourne
 - [ ] Au moins un modele est telecharge dans Ollama
 - [ ] LM Studio est installe et le serveur local demarre
-- [ ] Le fichier `~/.openclaw/openclaw.json` contient les deux providers
-- [ ] OpenClaw gateway redemarre sans erreur
+- [ ] Le fichier `~/.phoenix/phoenix.json` contient les deux providers
+- [ ] Phoenix gateway redemarre sans erreur
 - [ ] Le health check montre les deux providers connectes
 - [ ] Le basculement entre providers fonctionne
 - [ ] Les variables d'environnement GPU sont configurees
@@ -340,7 +340,7 @@ echo 'export OLLAMA_NUM_GPU=999' >> ~/.zshrc && source ~/.zshrc && ollama serve
 | API Ollama | https://github.com/ollama/ollama/blob/main/docs/api.md |
 | LM Studio | https://lmstudio.ai |
 | Modeles compatibles | https://ollama.ai/library |
-| OpenClaw Providers | https://docs.openclaw.ai/providers |
+| Phoenix Providers | https://docs.phoenix.ai/providers |
 
 ---
 

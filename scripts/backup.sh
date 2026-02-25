@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# OpenClaw Backup Script
+# Phoenix Backup Script
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
 # Description: Sauvegarde automatisée avec stratégie 3-2-1
@@ -52,7 +52,7 @@ readonly NC='\033[0m'
 # Répertoires
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-readonly BACKUP_DIR="${BACKUP_DIR:-$HOME/openclaw-backups}"
+readonly BACKUP_DIR="${BACKUP_DIR:-$HOME/phoenix-backups}"
 readonly BACKUP_OFFSITE="${BACKUP_OFFSITE:-}"
 readonly BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 
@@ -61,7 +61,7 @@ readonly TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 readonly DATE_HUMAN=$(date '+%Y-%m-%d %H:%M:%S')
 
 # Namespace Kubernetes
-readonly K8S_NAMESPACE="openclaw"
+readonly K8S_NAMESPACE="phoenix"
 
 # Mode simulation
 DRY_RUN=false
@@ -125,7 +125,7 @@ human_size() {
 show_help() {
     cat << 'EOF'
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                     OpenClaw Backup Script v1.0.0                             ║
+║                     Phoenix Backup Script v1.0.0                             ║
 ║                    Sauvegarde Automatisée 3-2-1                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -147,7 +147,7 @@ OPTIONS:
     --help          Afficher cette aide
 
 VARIABLES D'ENVIRONNEMENT:
-    BACKUP_DIR              Répertoire de sauvegarde (défaut: ~/openclaw-backups)
+    BACKUP_DIR              Répertoire de sauvegarde (défaut: ~/phoenix-backups)
     BACKUP_OFFSITE          Destination offsite pour rsync/rclone
     BACKUP_RETENTION_DAYS   Rétention en jours (défaut: 30)
 
@@ -159,13 +159,13 @@ EXEMPLES:
     ./backup.sh --config --dry-run
 
     # Restaurer depuis une archive
-    ./backup.sh --restore ~/openclaw-backups/backup_20260130_143022.tar.gz
+    ./backup.sh --restore ~/phoenix-backups/backup_20260130_143022.tar.gz
 
     # Nettoyer les vieilles sauvegardes
     ./backup.sh --clean 30
 
     # Synchroniser avec stockage distant
-    BACKUP_OFFSITE="user@server:/backups/openclaw" ./backup.sh --offsite
+    BACKUP_OFFSITE="user@server:/backups/phoenix" ./backup.sh --offsite
 
 STRATÉGIE 3-2-1:
     ┌─────────────────────────────────────────────────────────────────────────┐
@@ -265,9 +265,9 @@ backup_data() {
 
     # Répertoires de données potentiels
     local data_paths=(
-        "$HOME/.openclaw"
+        "$HOME/.phoenix"
         "$HOME/.ollama/models"
-        "/var/lib/openclaw"
+        "/var/lib/phoenix"
     )
 
     local dirs_to_backup=()
@@ -322,9 +322,9 @@ backup_logs() {
     log_step "Sauvegarde des logs..."
 
     local log_paths=(
-        "/var/log/openclaw"
-        "$HOME/.openclaw/logs"
-        "/tmp/openclaw"
+        "/var/log/phoenix"
+        "$HOME/.phoenix/logs"
+        "/tmp/phoenix"
     )
 
     local dirs_to_backup=()
@@ -454,7 +454,7 @@ backup_full() {
     # Créer un manifest
     cat > "$temp_dir/MANIFEST.txt" << EOF
 ═══════════════════════════════════════════════════════════════════════════════
-                         OpenClaw Full Backup
+                         Phoenix Full Backup
 ═══════════════════════════════════════════════════════════════════════════════
 
 Date de création : $DATE_HUMAN
@@ -679,7 +679,7 @@ sync_offsite() {
 
     if [ -z "$BACKUP_OFFSITE" ]; then
         log_error "Variable BACKUP_OFFSITE non définie"
-        log_info "Exemple : BACKUP_OFFSITE='user@server:/backups/openclaw' ./backup.sh --offsite"
+        log_info "Exemple : BACKUP_OFFSITE='user@server:/backups/phoenix' ./backup.sh --offsite"
         return 1
     fi
 
@@ -717,7 +717,7 @@ sync_offsite() {
 main() {
     echo ""
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║           OpenClaw Backup Script v1.0.0                           ║${NC}"
+    echo -e "${CYAN}║           Phoenix Backup Script v1.0.0                           ║${NC}"
     echo -e "${CYAN}║           $(date '+%Y-%m-%d %H:%M:%S')                                      ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════════╝${NC}"
     echo ""

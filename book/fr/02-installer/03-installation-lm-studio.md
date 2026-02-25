@@ -4,7 +4,7 @@
 - Comment installer LM Studio sur macOS
 - Comment télécharger des modèles depuis l'interface graphique
 - Comment configurer le serveur API local
-- Comment connecter LM Studio à OpenClaw
+- Comment connecter LM Studio à Phoenix
 
 ## 🛠️ Prérequis
 - Chapitre 2.1 complété (outils de base installés)
@@ -16,7 +16,7 @@
 
 ### Étape 1 : Télécharger LM Studio
 
-**Pourquoi ?** LM Studio offre une interface graphique facile pour gérer et tester des modèles d'IA. C'est parfait pour expérimenter avant de choisir un modèle pour OpenClaw.
+**Pourquoi ?** LM Studio offre une interface graphique facile pour gérer et tester des modèles d'IA. C'est parfait pour expérimenter avant de choisir un modèle pour Phoenix.
 
 **Comment ?**
 1. Ouvre Safari ou ton navigateur
@@ -139,7 +139,7 @@ Le modèle apparaît dans la section "My Models" (icône 📁).
 
 ### Étape 6 : Démarrer le serveur API local
 
-**Pourquoi ?** Pour qu'OpenClaw puisse utiliser LM Studio, on doit activer le serveur API qui écoute sur le port 1234.
+**Pourquoi ?** Pour qu'Phoenix puisse utiliser LM Studio, on doit activer le serveur API qui écoute sur le port 1234.
 
 **Comment ?**
 1. Clique sur l'icône 🔌 (Local Server) dans la barre latérale gauche
@@ -147,9 +147,9 @@ Le modèle apparaît dans la section "My Models" (icône 📁).
 3. Clique sur "Start Server"
 4. Le bouton devient vert et affiche "Server Running"
 
-**Configuration CORS (important pour OpenClaw) :**
+**Configuration CORS (important pour Phoenix) :**
 1. Dans les paramètres du serveur, active "Enable CORS"
-2. Cela permet à OpenClaw d'accéder au serveur depuis le navigateur
+2. Cela permet à Phoenix d'accéder au serveur depuis le navigateur
 
 **Vérification en Terminal :**
 ```bash
@@ -175,7 +175,7 @@ curl -s http://localhost:1234/v1/models | jq .
 
 ### Étape 7 : Tester l'API compatible OpenAI
 
-**Pourquoi ?** LM Studio expose une API compatible avec OpenAI. OpenClaw peut l'utiliser comme s'il parlait à GPT-4.
+**Pourquoi ?** LM Studio expose une API compatible avec OpenAI. Phoenix peut l'utiliser comme s'il parlait à GPT-4.
 
 **Comment ?**
 ```bash
@@ -222,7 +222,7 @@ Redémarre LM Studio et vérifie que le serveur démarre automatiquement.
 
 **Script de comparaison :**
 ```bash
-cat << 'EOF' > ~/openclaw/compare-backends.sh
+cat << 'EOF' > ~/phoenix/compare-backends.sh
 #!/bin/bash
 echo "=== Comparaison Ollama vs LM Studio ==="
 echo ""
@@ -256,23 +256,23 @@ fi
 echo ""
 echo "=== Comparaison terminée ==="
 EOF
-chmod +x ~/openclaw/compare-backends.sh
+chmod +x ~/phoenix/compare-backends.sh
 ```
 
 **Exécuter la comparaison :**
 ```bash
-~/openclaw/compare-backends.sh
+~/phoenix/compare-backends.sh
 ```
 
 ---
 
-### Étape 10 : Configuration pour OpenClaw
+### Étape 10 : Configuration pour Phoenix
 
-**Pourquoi ?** On prépare les paramètres que OpenClaw utilisera pour se connecter à LM Studio.
+**Pourquoi ?** On prépare les paramètres que Phoenix utilisera pour se connecter à LM Studio.
 
 **Créer le fichier de configuration :**
 ```bash
-cat << 'EOF' > ~/openclaw/config/lm-studio.json
+cat << 'EOF' > ~/phoenix/config/lm-studio.json
 {
   "name": "LM Studio Local",
   "type": "openai-compatible",
@@ -294,7 +294,7 @@ EOF
 
 **Vérification :**
 ```bash
-cat ~/openclaw/config/lm-studio.json | jq .
+cat ~/phoenix/config/lm-studio.json | jq .
 ```
 
 ---
@@ -310,7 +310,7 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] Le serveur local est démarré sur le port 1234
 - [ ] L'API répond correctement (test curl)
 - [ ] Le serveur est configuré pour démarrer automatiquement
-- [ ] Le fichier de configuration pour OpenClaw est créé
+- [ ] Le fichier de configuration pour Phoenix est créé
 
 ---
 
@@ -391,7 +391,7 @@ top -l 1 | grep PhysMem
 | **Usage mémoire** | Légèrement plus bas | Légèrement plus haut |
 | **Idéal pour** | Production, scripts | Tests, expérimentation |
 
-**Recommandation pour OpenClaw :**
+**Recommandation pour Phoenix :**
 - Utilise **Ollama** pour la production (plus stable, plus léger)
 - Utilise **LM Studio** pour tester de nouveaux modèles avant de les adopter
 

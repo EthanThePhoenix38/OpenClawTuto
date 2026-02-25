@@ -101,51 +101,51 @@ sudo systemctl stop k3s
 
 ---
 
-## 🦞 OpenClaw
+## 🦞 Phoenix
 
 ### Installation globale
 ```bash
-npm install -g openclaw@latest
+npm install -g phoenix@latest
 ```
 
 ### Onboarding
 ```bash
-openclaw onboard --install-daemon
+phoenix onboard --install-daemon
 ```
 
 ### Lancer le Gateway
 ```bash
-openclaw gateway
+phoenix gateway
 ```
 
 ### Vérifier le statut
 ```bash
-openclaw status
+phoenix status
 ```
 
 ### Audit de sécurité
 ```bash
-openclaw security audit
+phoenix security audit
 ```
 
 ### Audit avec corrections
 ```bash
-openclaw security audit --fix
+phoenix security audit --fix
 ```
 
 ### Voir les logs
 ```bash
-tail -f /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
+tail -f /tmp/phoenix/phoenix-$(date +%Y-%m-%d).log
 ```
 
 ### Mettre à jour
 ```bash
-openclaw update --channel stable
+phoenix update --channel stable
 ```
 
 ### Liste des canaux connectés
 ```bash
-openclaw channels list
+phoenix channels list
 ```
 
 ---
@@ -154,12 +154,12 @@ openclaw channels list
 
 ### Build une image
 ```bash
-docker build -t openclaw-secure:latest .
+docker build -t phoenix-secure:latest .
 ```
 
 ### Lancer un container
 ```bash
-docker run -d --name openclaw -p 18789:18789 openclaw-secure:latest
+docker run -d --name phoenix -p 18789:18789 phoenix-secure:latest
 ```
 
 ### Voir les containers
@@ -169,12 +169,12 @@ docker ps -a
 
 ### Logs d'un container
 ```bash
-docker logs -f openclaw
+docker logs -f phoenix
 ```
 
 ### Entrer dans un container
 ```bash
-docker exec -it openclaw /bin/sh
+docker exec -it phoenix /bin/sh
 ```
 
 ### Arrêter tous les containers
@@ -194,7 +194,7 @@ docker system prune -af --volumes
 ### Namespaces
 
 ```bash
-kubectl create namespace openclaw
+kubectl create namespace phoenix
 ```
 
 ```bash
@@ -202,123 +202,123 @@ kubectl get namespaces
 ```
 
 ```bash
-kubectl delete namespace openclaw
+kubectl delete namespace phoenix
 ```
 
 ### Pods
 
 ```bash
-kubectl get pods -n openclaw
+kubectl get pods -n phoenix
 ```
 
 ```bash
-kubectl get pods -n openclaw -o wide
+kubectl get pods -n phoenix -o wide
 ```
 
 ```bash
-kubectl describe pod <nom-pod> -n openclaw
+kubectl describe pod <nom-pod> -n phoenix
 ```
 
 ```bash
-kubectl logs <nom-pod> -n openclaw
+kubectl logs <nom-pod> -n phoenix
 ```
 
 ```bash
-kubectl logs -f <nom-pod> -n openclaw
+kubectl logs -f <nom-pod> -n phoenix
 ```
 
 ```bash
-kubectl exec -it <nom-pod> -n openclaw -- /bin/sh
+kubectl exec -it <nom-pod> -n phoenix -- /bin/sh
 ```
 
 ```bash
-kubectl delete pod <nom-pod> -n openclaw
+kubectl delete pod <nom-pod> -n phoenix
 ```
 
 ### Deployments
 
 ```bash
-kubectl get deployments -n openclaw
+kubectl get deployments -n phoenix
 ```
 
 ```bash
-kubectl describe deployment openclaw -n openclaw
+kubectl describe deployment phoenix -n phoenix
 ```
 
 ```bash
-kubectl rollout restart deployment/openclaw -n openclaw
+kubectl rollout restart deployment/phoenix -n phoenix
 ```
 
 ```bash
-kubectl rollout status deployment/openclaw -n openclaw
+kubectl rollout status deployment/phoenix -n phoenix
 ```
 
 ```bash
-kubectl scale deployment/openclaw --replicas=2 -n openclaw
+kubectl scale deployment/phoenix --replicas=2 -n phoenix
 ```
 
 ### Services
 
 ```bash
-kubectl get services -n openclaw
+kubectl get services -n phoenix
 ```
 
 ```bash
-kubectl describe service openclaw -n openclaw
+kubectl describe service phoenix -n phoenix
 ```
 
 ```bash
-kubectl port-forward svc/openclaw 18789:18789 -n openclaw
+kubectl port-forward svc/phoenix 18789:18789 -n phoenix
 ```
 
 ### Secrets
 
 ```bash
-kubectl get secrets -n openclaw
+kubectl get secrets -n phoenix
 ```
 
 ```bash
-kubectl create secret generic api-keys --from-literal=anthropic=sk-ant-xxx -n openclaw
+kubectl create secret generic api-keys --from-literal=anthropic=sk-ant-xxx -n phoenix
 ```
 
 ```bash
-kubectl describe secret api-keys -n openclaw
+kubectl describe secret api-keys -n phoenix
 ```
 
 ```bash
-kubectl get secret api-keys -n openclaw -o jsonpath='{.data.anthropic}' | base64 -d
+kubectl get secret api-keys -n phoenix -o jsonpath='{.data.anthropic}' | base64 -d
 ```
 
 ### ConfigMaps
 
 ```bash
-kubectl get configmaps -n openclaw
+kubectl get configmaps -n phoenix
 ```
 
 ```bash
-kubectl describe configmap openclaw-config -n openclaw
+kubectl describe configmap phoenix-config -n phoenix
 ```
 
 ### Network Policies
 
 ```bash
-kubectl get networkpolicies -n openclaw
+kubectl get networkpolicies -n phoenix
 ```
 
 ```bash
-kubectl describe networkpolicy deny-all -n openclaw
+kubectl describe networkpolicy deny-all -n phoenix
 ```
 
 ### Événements
 
 ```bash
-kubectl get events -n openclaw --sort-by='.lastTimestamp'
+kubectl get events -n phoenix --sort-by='.lastTimestamp'
 ```
 
 ### Ressources
 
 ```bash
-kubectl top pods -n openclaw
+kubectl top pods -n phoenix
 ```
 
 ```bash
@@ -332,7 +332,7 @@ kubectl apply -f manifest.yaml
 ```
 
 ```bash
-kubectl apply -f kubernetes/ -n openclaw
+kubectl apply -f kubernetes/ -n phoenix
 ```
 
 ```bash
@@ -345,7 +345,7 @@ kubectl delete -f manifest.yaml
 
 ### Scanner les vulnérabilités (Trivy)
 ```bash
-trivy image openclaw-secure:latest
+trivy image phoenix-secure:latest
 ```
 
 ### Vérifier les CVE npm
@@ -432,22 +432,22 @@ kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-pa
 
 ### Backup manuel
 ```bash
-~/scripts/backup-openclaw.sh
+~/scripts/backup-phoenix.sh
 ```
 
 ### Restauration
 ```bash
-~/scripts/restore-openclaw.sh
+~/scripts/restore-phoenix.sh
 ```
 
 ### Lister les backups
 ```bash
-ls -la ~/backups/openclaw/
+ls -la ~/backups/phoenix/
 ```
 
 ### Vérifier checksums
 ```bash
-cd ~/backups/openclaw && sha256sum -c openclaw_backup_*_checksums.sha256
+cd ~/backups/phoenix && sha256sum -c phoenix_backup_*_checksums.sha256
 ```
 
 ---
@@ -459,7 +459,7 @@ cd ~/backups/openclaw && sha256sum -c openclaw_backup_*_checksums.sha256
 curl -s http://localhost:11434/api/tags
 ```
 
-### Tester la connectivité OpenClaw
+### Tester la connectivité Phoenix
 ```bash
 curl -s http://localhost:18789/health
 ```
@@ -480,7 +480,7 @@ curl -I https://api.anthropic.com
 
 ### Cloner ce repo
 ```bash
-git clone https://github.com/EthanThePhoenix38/Openclaw.git
+git clone https://github.com/EthanThePhoenix38/Phoenix.git
 ```
 
 ### Commit signé

@@ -2,14 +2,14 @@
 
 ## 📖 Documentation Officielle
 
-### OpenClaw
+### Phoenix
 | Ressource | URL |
 |-----------|-----|
-| Site officiel | https://openclaw.ai |
-| Documentation | https://docs.openclaw.ai |
-| GitHub | https://github.com/openclaw/openclaw |
-| Discord | https://discord.gg/openclaw |
-| Changelog | https://github.com/openclaw/openclaw/releases |
+| Site officiel | https://phoenix.ai |
+| Documentation | https://docs.phoenix.ai |
+| GitHub | https://github.com/phoenix/phoenix |
+| Discord | https://discord.gg/phoenix |
+| Changelog | https://github.com/phoenix/phoenix/releases |
 
 ### Kubernetes
 | Ressource | URL |
@@ -141,7 +141,7 @@
 ### Discord
 | Communauté | URL |
 |------------|-----|
-| OpenClaw | https://discord.gg/openclaw |
+| Phoenix | https://discord.gg/phoenix |
 | k3s | https://slack.rancher.io/ |
 | Kubernetes | https://kubernetes.slack.com/ |
 | Ollama | https://discord.gg/ollama |
@@ -234,9 +234,9 @@
 - **Ko-fi** : [ko-fi.com/EthanThePhoenix](https://ko-fi.com/EthanThePhoenix)
 
 ### Repository
-- **GitHub** : https://github.com/EthanThePhoenix38/Openclaw
-- **Issues** : https://github.com/EthanThePhoenix38/Openclaw/issues
-- **Discussions** : https://github.com/EthanThePhoenix38/Openclaw/discussions
+- **GitHub** : https://github.com/EthanThePhoenix38/Phoenix
+- **Issues** : https://github.com/EthanThePhoenix38/Phoenix/issues
+- **Discussions** : https://github.com/EthanThePhoenix38/Phoenix/discussions
 
 ---
 

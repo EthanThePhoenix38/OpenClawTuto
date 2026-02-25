@@ -12,7 +12,7 @@ Dans ce chapitre, tu vas mettre en place un processus d'audit de sécurité cont
 
 ## 🛠️ Prérequis
 
-- OpenClaw déployé dans Kubernetes (Chapitres 1-4)
+- Phoenix déployé dans Kubernetes (Chapitres 1-4)
 - Accès aux images Docker utilisées
 - Trivy installé (scanner de vulnérabilités)
 
@@ -54,10 +54,10 @@ which trivy kubeaudit 2>/dev/null && echo "Outils d'audit installés" || echo "I
 
 **Comment ?**
 
-Scanne l'image OpenClaw :
+Scanne l'image Phoenix :
 
 ```bash
-trivy image --severity HIGH,CRITICAL openclaw:latest 2>/dev/null || echo "Image openclaw:latest non disponible - scanner vos vraies images"
+trivy image --severity HIGH,CRITICAL phoenix:latest 2>/dev/null || echo "Image phoenix:latest non disponible - scanner vos vraies images"
 ```
 
 Scanne l'image Squid :
@@ -90,7 +90,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: security-audit
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   schedule: "0 3 * * *"  # Tous les jours à 3h du matin
   concurrencyPolicy: Forbid
@@ -119,7 +119,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              echo "=== Audit de Sécurité OpenClaw - $(date) ==="
+              echo "=== Audit de Sécurité Phoenix - $(date) ==="
               echo ""
               echo "=== 1. Scan des vulnérabilités CVE ==="
 
@@ -168,7 +168,7 @@ kubectl apply -f /tmp/security-audit-cronjob.yaml
 **Vérification :**
 
 ```bash
-kubectl get cronjob security-audit -n openclaw-sandbox
+kubectl get cronjob security-audit -n phoenix-sandbox
 ```
 
 ### Étape 4 : Auditer la conformité OWASP Top 10
@@ -182,10 +182,10 @@ Crée un script d'audit OWASP :
 ```bash
 cat << 'EOF' > /tmp/owasp-audit.sh
 #!/bin/bash
-echo "=== Audit OWASP Top 10 2021 pour OpenClaw ==="
+echo "=== Audit OWASP Top 10 2021 pour Phoenix ==="
 echo ""
 
-NAMESPACE="openclaw-sandbox"
+NAMESPACE="phoenix-sandbox"
 SCORE=0
 TOTAL=10
 
@@ -201,7 +201,7 @@ fi
 
 # A02:2021 - Cryptographic Failures
 echo "A02:2021 - Cryptographic Failures"
-SECRETS_COUNT=$(kubectl get secrets -n $NAMESPACE -l app=openclaw --no-headers 2>/dev/null | wc -l)
+SECRETS_COUNT=$(kubectl get secrets -n $NAMESPACE -l app=phoenix --no-headers 2>/dev/null | wc -l)
 if [ "$SECRETS_COUNT" -gt 0 ]; then
   echo "  [OK] Secrets Kubernetes utilisés ($SECRETS_COUNT)"
   SCORE=$((SCORE+1))
@@ -211,7 +211,7 @@ fi
 
 # A03:2021 - Injection
 echo "A03:2021 - Injection"
-SANDBOX_CONFIG=$(kubectl get configmap openclaw-config -n $NAMESPACE -o jsonpath='{.data.sandbox\.yaml}' 2>/dev/null | grep -c "blocked_commands")
+SANDBOX_CONFIG=$(kubectl get configmap phoenix-config -n $NAMESPACE -o jsonpath='{.data.sandbox\.yaml}' 2>/dev/null | grep -c "blocked_commands")
 if [ "$SANDBOX_CONFIG" -gt 0 ]; then
   echo "  [OK] Sandbox avec commandes bloquées configuré"
   SCORE=$((SCORE+1))
@@ -276,7 +276,7 @@ fi
 
 # A10:2021 - Server-Side Request Forgery (SSRF)
 echo "A10:2021 - Server-Side Request Forgery (SSRF)"
-PROXY_REQUIRED=$(kubectl get configmap openclaw-config -n $NAMESPACE -o jsonpath='{.data.sandbox\.yaml}' 2>/dev/null | grep -c "proxy_required: true")
+PROXY_REQUIRED=$(kubectl get configmap phoenix-config -n $NAMESPACE -o jsonpath='{.data.sandbox\.yaml}' 2>/dev/null | grep -c "proxy_required: true")
 if [ "$PROXY_REQUIRED" -gt 0 ]; then
   echo "  [OK] Proxy obligatoire (protection SSRF)"
   SCORE=$((SCORE+1))
@@ -318,7 +318,7 @@ cat << 'EOF' > /tmp/nist-audit.sh
 #!/bin/bash
 echo "=== Audit NIST Cybersecurity Framework ==="
 echo ""
-NAMESPACE="openclaw-sandbox"
+NAMESPACE="phoenix-sandbox"
 
 echo "== 1. IDENTIFY (ID) =="
 echo "ID.AM - Asset Management"
@@ -368,7 +368,7 @@ chmod +x /tmp/nist-audit.sh && /tmp/nist-audit.sh
 **Vérification :**
 
 ```bash
-echo "Résumé NIST CSF:" && kubectl get pods,services,secrets,configmaps,networkpolicy,cronjob -n openclaw-sandbox --no-headers 2>/dev/null | wc -l | xargs -I {} echo "Total ressources auditées: {}"
+echo "Résumé NIST CSF:" && kubectl get pods,services,secrets,configmaps,networkpolicy,cronjob -n phoenix-sandbox --no-headers 2>/dev/null | wc -l | xargs -I {} echo "Total ressources auditées: {}"
 ```
 
 ### Étape 6 : Auditer les configurations Kubernetes avec kubeaudit
@@ -380,27 +380,27 @@ echo "Résumé NIST CSF:" && kubectl get pods,services,secrets,configmaps,networ
 Audit du namespace :
 
 ```bash
-kubeaudit all -n openclaw-sandbox 2>/dev/null || echo "Exécuter: kubeaudit all -n openclaw-sandbox"
+kubeaudit all -n phoenix-sandbox 2>/dev/null || echo "Exécuter: kubeaudit all -n phoenix-sandbox"
 ```
 
 Pour un audit spécifique :
 
 ```bash
-kubeaudit nonroot -n openclaw-sandbox 2>/dev/null && echo "Audit nonroot OK" || echo "Exécuter manuellement"
+kubeaudit nonroot -n phoenix-sandbox 2>/dev/null && echo "Audit nonroot OK" || echo "Exécuter manuellement"
 ```
 
 ```bash
-kubeaudit privesc -n openclaw-sandbox 2>/dev/null && echo "Audit privilege escalation OK" || echo "Exécuter manuellement"
+kubeaudit privesc -n phoenix-sandbox 2>/dev/null && echo "Audit privilege escalation OK" || echo "Exécuter manuellement"
 ```
 
 ```bash
-kubeaudit rootfs -n openclaw-sandbox 2>/dev/null && echo "Audit rootfs OK" || echo "Exécuter manuellement"
+kubeaudit rootfs -n phoenix-sandbox 2>/dev/null && echo "Audit rootfs OK" || echo "Exécuter manuellement"
 ```
 
 **Vérification :**
 
 ```bash
-echo "Pour un audit complet, exécuter: kubeaudit all -n openclaw-sandbox -f json > /tmp/kubeaudit-report.json"
+echo "Pour un audit complet, exécuter: kubeaudit all -n phoenix-sandbox -f json > /tmp/kubeaudit-report.json"
 ```
 
 ### Étape 7 : Créer le rapport d'audit consolidé
@@ -412,18 +412,18 @@ echo "Pour un audit complet, exécuter: kubeaudit all -n openclaw-sandbox -f jso
 ```bash
 cat << 'EOF' > /tmp/generate-audit-report.sh
 #!/bin/bash
-NAMESPACE="openclaw-sandbox"
+NAMESPACE="phoenix-sandbox"
 DATE=$(date +%Y-%m-%d)
 REPORT_FILE="/tmp/security-audit-report-$DATE.md"
 
 cat > $REPORT_FILE << REPORT
-# Rapport d'Audit Sécurité OpenClaw
+# Rapport d'Audit Sécurité Phoenix
 Date: $DATE
 Namespace: $NAMESPACE
 
 ## Résumé Exécutif
 
-Ce rapport présente l'état de sécurité du déploiement OpenClaw.
+Ce rapport présente l'état de sécurité du déploiement Phoenix.
 
 ## 1. Inventaire des Assets
 
@@ -484,7 +484,7 @@ Exécuter: trivy image <images-utilisées>
 | | | | |
 
 ---
-Généré automatiquement par le script d'audit OpenClaw
+Généré automatiquement par le script d'audit Phoenix
 REPORT
 
 echo "Rapport généré: $REPORT_FILE"
@@ -511,7 +511,7 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] Score OWASP >= 8/10
 
 ```bash
-echo "=== Vérification Audit ===" && kubectl get cronjob security-audit -n openclaw-sandbox 2>/dev/null && ls -la /tmp/*-audit*.sh 2>/dev/null && echo "=== Audit OK ==="
+echo "=== Vérification Audit ===" && kubectl get cronjob security-audit -n phoenix-sandbox 2>/dev/null && ls -la /tmp/*-audit*.sh 2>/dev/null && echo "=== Audit OK ==="
 ```
 
 ## ⚠️ Dépannage
@@ -543,7 +543,7 @@ trivy image --download-db-only
 **Solution** :
 
 ```bash
-kubectl describe cronjob security-audit -n openclaw-sandbox && kubectl get events -n openclaw-sandbox --field-selector involvedObject.kind=CronJob
+kubectl describe cronjob security-audit -n phoenix-sandbox && kubectl get events -n phoenix-sandbox --field-selector involvedObject.kind=CronJob
 ```
 
 ### Score OWASP trop bas

@@ -2,20 +2,20 @@
 
 ## 📋 Ce que tu vas apprendre
 
-- Comment OpenClaw est structuré
+- Comment Phoenix est structuré
 - Le rôle de chaque composant
 - Comment les données circulent
 - L'architecture spécifique pour Mac Studio M3 Ultra
 
 ## 🛠️ Prérequis
 
-- [Chapitre 1.1](./01-quest-ce-que-openclaw.md) complété
+- [Chapitre 1.1](./01-quest-ce-que-phoenix.md) complété
 
 ---
 
 ## 📝 Vue d'ensemble
 
-OpenClaw fonctionne comme un **hub central** qui connecte tes messageries à un cerveau IA. Voici l'architecture simplifiée :
+Phoenix fonctionne comme un **hub central** qui connecte tes messageries à un cerveau IA. Voici l'architecture simplifiée :
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -65,8 +65,8 @@ Le **Gateway** est le serveur WebSocket central. C'est le chef d'orchestre.
 
 **Fichiers importants :**
 ```
-~/.openclaw/
-├── openclaw.json          # Configuration principale
+~/.phoenix/
+├── phoenix.json          # Configuration principale
 ├── credentials/           # Tokens des messageries
 │   └── whatsapp/
 │       └── creds.json
@@ -205,10 +205,10 @@ Pour ce guide, voici l'architecture **sécurisée** recommandée :
 │  │                 KUBERNETES (k3s)                          │  │
 │  │                                                           │  │
 │  │   ┌────────────────────────────────────────────────────┐ │  │
-│  │   │              NAMESPACE: openclaw                    │ │  │
+│  │   │              NAMESPACE: phoenix                    │ │  │
 │  │   │                                                     │ │  │
 │  │   │  ┌──────────────┐    ┌──────────────┐             │ │  │
-│  │   │  │   OPENCLAW   │    │    SQUID     │             │ │  │
+│  │   │  │   PHOENIX   │    │    SQUID     │             │ │  │
 │  │   │  │   Gateway    │───►│    Proxy     │───► Internet│ │  │
 │  │   │  │   :18789     │    │   :3128      │             │ │  │
 │  │   │  └──────────────┘    └──────────────┘             │ │  │
@@ -230,7 +230,7 @@ Les LLM locaux (Ollama, LM Studio) tournent **directement sur macOS** pour :
 - ✅ Performances optimales (pas de virtualisation)
 - ✅ Pas de limitation de mémoire container
 
-**2. OpenClaw DANS Kubernetes (isolé)**
+**2. Phoenix DANS Kubernetes (isolé)**
 
 Le Gateway tourne dans un **pod Kubernetes** pour :
 - ✅ Isolation totale du système hôte
@@ -315,7 +315,7 @@ Voici comment un message circule dans le système :
 │  └───────────────────────────────────────────────────────────┘ │
 │                              │                                  │
 │  ┌───────────────────────────────────────────────────────────┐ │
-│  │ COUCHE 4: OpenClaw Sandbox                                 │ │
+│  │ COUCHE 4: Phoenix Sandbox                                 │ │
 │  │ - Tool allowlist                                           │ │
 │  │ - Path restrictions                                        │ │
 │  │ - Command filtering                                        │ │
@@ -338,7 +338,7 @@ Voici comment un message circule dans le système :
 - [ ] J'ai compris le rôle du Gateway (hub central)
 - [ ] J'ai compris comment les channels connectent les messageries
 - [ ] J'ai compris pourquoi les LLM sont HORS Kubernetes (GPU)
-- [ ] J'ai compris pourquoi OpenClaw est DANS Kubernetes (isolation)
+- [ ] J'ai compris pourquoi Phoenix est DANS Kubernetes (isolation)
 - [ ] J'ai compris le rôle du proxy Squid (whitelist internet)
 - [ ] J'ai compris les 5 couches de sécurité
 
@@ -346,7 +346,7 @@ Voici comment un message circule dans le système :
 
 ## ⚠️ Dépannage
 
-**Problème :** Je ne comprends pas pourquoi séparer LLM et OpenClaw
+**Problème :** Je ne comprends pas pourquoi séparer LLM et Phoenix
 
 **Solution :** macOS ne permet pas aux containers Docker d'accéder au GPU Metal. Si tu mets Ollama dans Docker, il utilisera le CPU (10x plus lent). En le gardant natif, tu profites des 192 Go de RAM unifiée et du GPU M3.
 
@@ -354,7 +354,7 @@ Voici comment un message circule dans le système :
 
 ## 🔗 Ressources
 
-- [Architecture OpenClaw (docs officielles)](https://docs.openclaw.ai/gateway/architecture)
+- [Architecture Phoenix (docs officielles)](https://docs.phoenix.ai/gateway/architecture)
 - [k3s Architecture](https://docs.k3s.io/architecture)
 - [Metal Performance Shaders (Apple)](https://developer.apple.com/metal/)
 

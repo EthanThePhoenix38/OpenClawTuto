@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="OpenClaw - Complete deployment guide for Mac, Windows & Linux with Kubernetes">
+    <meta name="description" content="Phoenix - Complete deployment guide for Mac, Windows & Linux with Kubernetes">
     <meta name="author" content="Ethan Bernier">
-    <meta name="keywords" content="OpenClaw, Kubernetes, Mac Studio, M3 Ultra, Docker, Ollama, LM Studio, AI, Assistant, Windows, Linux, WSL">
-    <meta property="og:title" content="OpenClaw - Multi-Platform Deployment Guide">
-    <meta property="og:description" content="Deploy OpenClaw AI Assistant on Mac, Windows or Linux with Kubernetes">
+    <meta name="keywords" content="Phoenix, Kubernetes, Mac Studio, M3 Ultra, Docker, Ollama, LM Studio, AI, Assistant, Windows, Linux, WSL">
+    <meta property="og:title" content="Phoenix - Multi-Platform Deployment Guide">
+    <meta property="og:description" content="Deploy Phoenix AI Assistant on Mac, Windows or Linux with Kubernetes">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://github.com/EthanThePhoenix38/Openclaw">
-    <title>OpenClaw - Guide de Déploiement | Deployment Guide</title>
+    <meta property="og:url" content="https://github.com/EthanThePhoenix38/Phoenix">
+    <title>Phoenix - Guide de Déploiement | Deployment Guide</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
@@ -608,7 +608,7 @@
                 <circle cx="50" cy="28" r="4" fill="#333"/>
                 <path d="M46 32 Q50 38 54 32" stroke="#ff6b35" stroke-width="2" fill="none"/>
             </svg>
-            <div class="logo-text">OpenClaw</div>
+            <div class="logo-text">Phoenix</div>
             <div class="logo-tagline">Self-Hosted AI Assistant</div>
             <div class="version-badge">v1.0.0</div>
         </div>
@@ -666,7 +666,7 @@
         </div>
 
         <div class="nav-section">
-            <div class="nav-section-title">Part IV - OpenClaw</div>
+            <div class="nav-section-title">Part IV - OpenClaw / Phoenix</div>
             <a href="#ch13" class="nav-link" data-chapter="ch13"><span class="icon">🚀</span> 13. <span data-lang-content="fr">Déploiement</span><span data-lang-content="en">Deployment</span></a>
             <a href="#ch14" class="nav-link" data-chapter="ch14"><span class="icon">🔧</span> 14. Configuration</a>
             <a href="#ch15" class="nav-link" data-chapter="ch15"><span class="icon">🛡️</span> 15. <span data-lang-content="fr">Sécurité</span><span data-lang-content="en">Security</span></a>
@@ -704,7 +704,7 @@
                 <button class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
             </div>
             <button class="btn btn-icon" onclick="toggleTheme()" aria-label="Toggle theme">🌓</button>
-            <a href="https://github.com/EthanThePhoenix38/OpenclawBook" class="btn btn-primary" target="_blank" rel="noopener">⭐ GitHub</a>
+            <a href="https://github.com/EthanThePhoenix38/PhoenixBook" class="btn btn-primary" target="_blank" rel="noopener">⭐ GitHub</a>
         </div>
     </header>
 
@@ -714,7 +714,7 @@
             <article class="chapter active" id="home-content" data-chapter="home">
                 <!-- French Content -->
                 <div data-lang-content="fr">
-                    <h1>🦅 OpenClaw - Guide de Déploiement</h1>
+                    <h1>🦅 Phoenix - Guide de Déploiement</h1>
 
                     <div class="alert alert-success">
                         <span class="alert-icon">🎉</span>
@@ -722,7 +722,7 @@
                     </div>
 
                     <h2>À propos de ce guide</h2>
-                    <p>Guide exhaustif pour déployer OpenClaw, votre assistant IA auto-hébergé, dans un environnement Kubernetes sécurisé. Optimisé pour tirer parti des GPU modernes (Apple Metal, NVIDIA CUDA, AMD ROCm).</p>
+                    <p>Guide exhaustif pour déployer Phoenix, votre assistant IA auto-hébergé, dans un environnement Kubernetes sécurisé. Optimisé pour tirer parti des GPU modernes (Apple Metal, NVIDIA CUDA, AMD ROCm).</p>
 
                     <!-- Mermaid Architecture Diagram -->
                     <h3>Architecture Globale</h3>
@@ -735,7 +735,7 @@ flowchart TB
             LLM --> GPU
         end
         subgraph K8S["☸️ Kubernetes (k3s)"]
-            OC["🦅 OpenClaw Pod"]
+            OC["🦅 Phoenix Pod"]
             SQUID["🦑 Squid Proxy"]
             PROM["📊 Prometheus"]
             GRAF["📈 Grafana"]
@@ -771,7 +771,7 @@ flowchart TB
 
                 <!-- English Content -->
                 <div data-lang-content="en">
-                    <h1>🦅 OpenClaw - Deployment Guide</h1>
+                    <h1>🦅 Phoenix - Deployment Guide</h1>
 
                     <div class="alert alert-success">
                         <span class="alert-icon">🎉</span>
@@ -779,7 +779,7 @@ flowchart TB
                     </div>
 
                     <h2>About This Guide</h2>
-                    <p>Comprehensive guide to deploy OpenClaw, your self-hosted AI assistant, in a secure Kubernetes environment. Optimized to leverage modern GPUs (Apple Metal, NVIDIA CUDA, AMD ROCm).</p>
+                    <p>Comprehensive guide to deploy Phoenix, your self-hosted AI assistant, in a secure Kubernetes environment. Optimized to leverage modern GPUs (Apple Metal, NVIDIA CUDA, AMD ROCm).</p>
 
                     <h3>Global Architecture</h3>
                     <div class="mermaid">
@@ -791,7 +791,7 @@ flowchart TB
             LLM --> GPU
         end
         subgraph K8S["☸️ Kubernetes (k3s)"]
-            OC["🦅 OpenClaw Pod"]
+            OC["🦅 Phoenix Pod"]
             SQUID["🦑 Squid Proxy"]
             PROM["📊 Prometheus"]
             GRAF["📈 Grafana"]
@@ -836,16 +836,16 @@ flowchart TB
                 </div>
                 <div class="tab-content active" id="qs-mac">
                     <pre data-lang="bash"><code># Clone repository
-git clone https://github.com/EthanThePhoenix38/Openclaw.git && cd Openclaw
+git clone https://github.com/EthanThePhoenix38/Phoenix.git && cd Phoenix
 
 # Install Homebrew dependencies
 brew install kubectl helm k3d
 
 # Install k3s via k3d
-k3d cluster create openclaw --api-port 6550 -p "8080:80@loadbalancer"
+k3d cluster create phoenix --api-port 6550 -p "8080:80@loadbalancer"
 
-# Deploy OpenClaw
-./scripts/deploy-openclaw.sh
+# Deploy Phoenix
+./scripts/deploy-phoenix.sh
 
 # Install Ollama (native for Metal GPU)
 brew install ollama && ollama serve &
@@ -859,7 +859,7 @@ wsl --install -d Ubuntu-22.04
 sudo apt update && sudo apt install -y curl git
 
 # Clone repository
-git clone https://github.com/EthanThePhoenix38/Openclaw.git && cd Openclaw
+git clone https://github.com/EthanThePhoenix38/Phoenix.git && cd Phoenix
 
 # Install k3s
 curl -sfL https://get.k3s.io | sh -
@@ -868,12 +868,12 @@ curl -sfL https://get.k3s.io | sh -
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull llama3.1:70b
 
-# Deploy OpenClaw
-./scripts/deploy-openclaw.sh</code></pre>
+# Deploy Phoenix
+./scripts/deploy-phoenix.sh</code></pre>
                 </div>
                 <div class="tab-content" id="qs-linux">
                     <pre data-lang="bash"><code># Clone repository
-git clone https://github.com/EthanThePhoenix38/Openclaw.git && cd Openclaw
+git clone https://github.com/EthanThePhoenix38/Phoenix.git && cd Phoenix
 
 # Install k3s
 curl -sfL https://get.k3s.io | sh -
@@ -884,8 +884,14 @@ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull llama3.1:70b
 
-# Deploy OpenClaw
-./scripts/deploy-openclaw.sh</code></pre>
+# Deploy Phoenix
+./scripts/deploy-phoenix.sh</code></pre>
+                </div>
+
+                <div class="alert alert-info">
+                    <span class="alert-icon">📌</span>
+                    <div data-lang-content="fr">Entree marketing OpenClaw: utiliser <code>./scripts/deploy-openclaw.sh</code> (alias de <code>./scripts/deploy-phoenix.sh</code>).</div>
+                    <div data-lang-content="en">OpenClaw marketing entrypoint: use <code>./scripts/deploy-openclaw.sh</code> (alias of <code>./scripts/deploy-phoenix.sh</code>).</div>
                 </div>
 
                 <!-- Security Flow Diagram -->
@@ -901,7 +907,7 @@ flowchart LR
         direction TB
         ING["🚪 Ingress\n(TLS)"]
         NP["🛡️ NetworkPolicy\n(Zero-Trust)"]
-        OC["🦅 OpenClaw"]
+        OC["🦅 Phoenix"]
         SQUID["🦑 Squid Proxy\n(Whitelist)"]
         LLM["🦙 LLM API"]
     end
@@ -935,7 +941,7 @@ flowchart LR
                     <p data-lang-content="fr">Ce guide est 100% gratuit et open-source. Si vous le trouvez utile, envisagez de faire un don ou de mettre une ⭐ sur GitHub!</p>
                     <p data-lang-content="en">This guide is 100% free and open-source. If you find it useful, consider donating or starring ⭐ on GitHub!</p>
                     <div class="promo-links">
-                        <a href="https://github.com/EthanThePhoenix38/Openclaw" class="github" target="_blank">⭐ Star on GitHub</a>
+                        <a href="https://github.com/EthanThePhoenix38/Phoenix" class="github" target="_blank">⭐ Star on GitHub</a>
                         <a href="https://paypal.me/VanessaBernier" class="paypal" target="_blank">💳 PayPal</a>
                         <a href="https://ko-fi.com/EthanThePhoenix" class="kofi" target="_blank">☕ Ko-fi</a>
                     </div>
@@ -1015,7 +1021,7 @@ flowchart TB
         subgraph DOCKER["🐳 Docker Desktop"]
             K3D["☸️ k3d Cluster"]
             subgraph PODS["Pods"]
-                OC["🦅 OpenClaw"]
+                OC["🦅 Phoenix"]
                 SQ["🦑 Squid"]
             end
         end
@@ -1036,7 +1042,7 @@ brew install --cask docker
 brew install kubectl helm k3d git
 
 # 4. Create k3d cluster
-k3d cluster create openclaw \
+k3d cluster create phoenix \
     --api-port 6550 \
     -p "8080:80@loadbalancer" \
     -p "8443:443@loadbalancer" \
@@ -1049,10 +1055,10 @@ ollama serve &  # Start in background
 # 6. Pull LLM model
 ollama pull llama3.1:70b
 
-# 7. Clone and deploy OpenClaw
-git clone https://github.com/EthanThePhoenix38/Openclaw.git
-cd Openclaw
-./scripts/deploy-openclaw.sh</code></pre>
+# 7. Clone and deploy Phoenix
+git clone https://github.com/EthanThePhoenix38/Phoenix.git
+cd Phoenix
+./scripts/deploy-phoenix.sh</code></pre>
                 </div>
 
                 <!-- Windows Tab -->
@@ -1071,7 +1077,7 @@ flowchart TB
             K3S["☸️ k3s"]
             OLLAMA["🦙 Ollama"]
             subgraph PODS["Pods"]
-                OC["🦅 OpenClaw"]
+                OC["🦅 Phoenix"]
                 SQ["🦑 Squid"]
             end
         end
@@ -1116,9 +1122,9 @@ ollama serve &
 ollama pull llama3.1:70b
 
 # 7. Clone and deploy
-git clone https://github.com/EthanThePhoenix38/Openclaw.git
-cd Openclaw
-./scripts/deploy-openclaw.sh</code></pre>
+git clone https://github.com/EthanThePhoenix38/Phoenix.git
+cd Phoenix
+./scripts/deploy-phoenix.sh</code></pre>
                 </div>
 
                 <!-- Linux Tab -->
@@ -1141,7 +1147,7 @@ flowchart TB
             K3S["☸️ k3s"]
             OLLAMA["🦙 Ollama"]
             subgraph PODS["Pods"]
-                OC["🦅 OpenClaw"]
+                OC["🦅 Phoenix"]
                 SQ["🦑 Squid"]
                 PROM["📊 Monitoring"]
             end
@@ -1175,40 +1181,40 @@ sudo systemctl start ollama
 ollama pull llama3.1:70b
 
 # 5. Clone and deploy
-git clone https://github.com/EthanThePhoenix38/Openclaw.git
-cd Openclaw
-./scripts/deploy-openclaw.sh
+git clone https://github.com/EthanThePhoenix38/Phoenix.git
+cd Phoenix
+./scripts/deploy-phoenix.sh
 
 # 6. Verify
-kubectl get pods -n openclaw</code></pre>
+kubectl get pods -n phoenix</code></pre>
                 </div>
             </article>
 
             <!-- ==================== CHAPTER 1 ==================== -->
             <article class="chapter" id="ch01-content" data-chapter="ch01">
-                <h1 data-lang-content="fr">📖 Chapitre 1 : Introduction à OpenClaw</h1>
-                <h1 data-lang-content="en">📖 Chapter 1: Introduction to OpenClaw</h1>
+                <h1 data-lang-content="fr">📖 Chapitre 1 : Introduction à Phoenix</h1>
+                <h1 data-lang-content="en">📖 Chapter 1: Introduction to Phoenix</h1>
 
                 <div data-lang-content="fr">
-                    <p>OpenClaw est un assistant IA open-source conçu pour être auto-hébergé. Contrairement aux solutions cloud, vous gardez le contrôle total de vos données et conversations.</p>
+                    <p>Phoenix est un assistant IA open-source conçu pour être auto-hébergé. Contrairement aux solutions cloud, vous gardez le contrôle total de vos données et conversations.</p>
                     <div class="alert alert-info">
                         <span class="alert-icon">📖</span>
-                        <div>Contenu complet disponible dans <a href="book/fr/01-comprendre/01-quest-ce-que-openclaw.md"><code>book/fr/01-comprendre/01-quest-ce-que-openclaw.md</code></a></div>
+                        <div>Parcours OpenClaw: <a href="book/fr/01-comprendre/01-quest-ce-que-openclaw.md"><code>book/fr/01-comprendre/01-quest-ce-que-openclaw.md</code></a><br>Parcours Phoenix: <a href="book/fr/01-comprendre/01-quest-ce-que-phoenix.md"><code>book/fr/01-comprendre/01-quest-ce-que-phoenix.md</code></a></div>
                     </div>
                 </div>
                 <div data-lang-content="en">
-                    <p>OpenClaw is an open-source AI assistant designed to be self-hosted. Unlike cloud solutions, you maintain complete control over your data and conversations.</p>
+                    <p>Phoenix is an open-source AI assistant designed to be self-hosted. Unlike cloud solutions, you maintain complete control over your data and conversations.</p>
                     <div class="alert alert-info">
                         <span class="alert-icon">📖</span>
-                        <div>EN translation pending. Use FR source: <a href="book/fr/01-comprendre/01-quest-ce-que-openclaw.md"><code>book/fr/01-comprendre/01-quest-ce-que-openclaw.md</code></a></div>
+                        <div>Dual FR sources: OpenClaw <a href="book/fr/01-comprendre/01-quest-ce-que-openclaw.md"><code>book/fr/01-comprendre/01-quest-ce-que-openclaw.md</code></a> and Phoenix <a href="book/fr/01-comprendre/01-quest-ce-que-phoenix.md"><code>book/fr/01-comprendre/01-quest-ce-que-phoenix.md</code></a></div>
                     </div>
                 </div>
 
-                <h3 data-lang-content="fr">Pourquoi OpenClaw?</h3>
-                <h3 data-lang-content="en">Why OpenClaw?</h3>
+                <h3 data-lang-content="fr">Pourquoi Phoenix?</h3>
+                <h3 data-lang-content="en">Why Phoenix?</h3>
                 <div class="mermaid">
 mindmap
-  root((OpenClaw))
+  root((Phoenix))
     Privacy
       Data stays local
       No cloud dependency
@@ -1234,10 +1240,10 @@ mindmap
                 <h1 data-lang-content="en">🏗️ Chapter 2: System Architecture</h1>
 
                 <div data-lang-content="fr">
-                    <p>L'architecture OpenClaw sépare le LLM (natif pour l'accès GPU) de l'application (conteneurisée pour l'isolation).</p>
+                    <p>L'architecture Phoenix sépare le LLM (natif pour l'accès GPU) de l'application (conteneurisée pour l'isolation).</p>
                 </div>
                 <div data-lang-content="en">
-                    <p>The OpenClaw architecture separates the LLM (native for GPU access) from the application (containerized for isolation).</p>
+                    <p>The Phoenix architecture separates the LLM (native for GPU access) from the application (containerized for isolation).</p>
                 </div>
                 <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <a href="book/fr/01-comprendre/02-architecture-technique.md"><code>book/fr/01-comprendre/02-architecture-technique.md</code></a></div><div data-lang-content="en">EN translation pending. Use FR source: <a href="book/fr/01-comprendre/02-architecture-technique.md"><code>book/fr/01-comprendre/02-architecture-technique.md</code></a></div></div>
 
@@ -1257,8 +1263,8 @@ flowchart TB
 
     subgraph K8S["☸️ Kubernetes Cluster"]
         subgraph APP["Application Tier"]
-            OC1["🦅 OpenClaw-1"]
-            OC2["🦅 OpenClaw-2"]
+            OC1["🦅 Phoenix-1"]
+            OC2["🦅 Phoenix-2"]
         end
 
         subgraph PROXY["Proxy Tier"]
@@ -1299,7 +1305,7 @@ flowchart TB
 sequenceDiagram
     participant U as 👤 User
     participant I as 🚪 Ingress
-    participant O as 🦅 OpenClaw
+    participant O as 🦅 Phoenix
     participant L as 🦙 Ollama
     participant G as ⚡ GPU
     participant S as 🦑 Squid
@@ -1357,7 +1363,7 @@ sequenceDiagram
             <article class="chapter" id="ch08-content" data-chapter="ch08">
                 <h1 data-lang-content="fr">💾 Stockage</h1>
                 <h1 data-lang-content="en">💾 Storage</h1>
-                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a></div><div data-lang-content="en">EN translation pending. Use FR source: <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a></div></div>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir OpenClaw <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a> ou Phoenix <a href="book/fr/02-installer/05-deploiement-phoenix.md"><code>book/fr/02-installer/05-deploiement-phoenix.md</code></a></div><div data-lang-content="en">Use FR source: OpenClaw <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a> or Phoenix <a href="book/fr/02-installer/05-deploiement-phoenix.md"><code>book/fr/02-installer/05-deploiement-phoenix.md</code></a></div></div>
             </article>
 
             <article class="chapter" id="ch09-content" data-chapter="ch09">
@@ -1382,9 +1388,9 @@ sequenceDiagram
             </article>
 
             <article class="chapter" id="ch13-content" data-chapter="ch13">
-                <h1 data-lang-content="fr">🚀 Déploiement OpenClaw</h1>
-                <h1 data-lang-content="en">🚀 OpenClaw Deployment</h1>
-                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Voir <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a></div><div data-lang-content="en">EN translation pending. Use FR source: <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a></div></div>
+                <h1 data-lang-content="fr">🚀 Déploiement OpenClaw / Phoenix</h1>
+                <h1 data-lang-content="en">🚀 OpenClaw / Phoenix Deployment</h1>
+                <div class="alert alert-info"><span class="alert-icon">📖</span><div data-lang-content="fr">Parcours OpenClaw: <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a><br>Parcours Phoenix: <a href="book/fr/02-installer/05-deploiement-phoenix.md"><code>book/fr/02-installer/05-deploiement-phoenix.md</code></a></div><div data-lang-content="en">Dual FR sources: OpenClaw <a href="book/fr/02-installer/05-deploiement-openclaw.md"><code>book/fr/02-installer/05-deploiement-openclaw.md</code></a> and Phoenix <a href="book/fr/02-installer/05-deploiement-phoenix.md"><code>book/fr/02-installer/05-deploiement-phoenix.md</code></a></div></div>
             </article>
 
             <article class="chapter" id="ch14-content" data-chapter="ch14">

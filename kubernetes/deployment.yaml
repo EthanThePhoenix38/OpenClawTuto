@@ -1,25 +1,25 @@
 # =============================================================================
-# OpenClaw Kubernetes Deployment
+# Phoenix Kubernetes Deployment
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
-# Description: Déploiement sécurisé d'OpenClaw avec isolation maximale
+# Description: Déploiement sécurisé d'Phoenix avec isolation maximale
 # =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: openclaw
-  namespace: openclaw
+  name: phoenix
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
-    app.kubernetes.io/instance: openclaw-production
+    app.kubernetes.io/name: phoenix
+    app.kubernetes.io/instance: phoenix-production
     app.kubernetes.io/version: "2026.1.30"
     app.kubernetes.io/component: gateway
-    app.kubernetes.io/part-of: openclaw-stack
+    app.kubernetes.io/part-of: phoenix-stack
     app.kubernetes.io/managed-by: kubectl
-    app: openclaw
+    app: phoenix
   annotations:
-    description: "OpenClaw Gateway - Assistant IA personnel sécurisé"
-    security.openclaw.io/sandbox-mode: "enabled"
+    description: "Phoenix Gateway - Assistant IA personnel sécurisé"
+    security.phoenix.io/sandbox-mode: "enabled"
     kubernetes.io/change-cause: "Initial deployment v2026.1.30"
 spec:
   # Nombre de réplicas (1 pour usage personnel)
@@ -33,20 +33,20 @@ spec:
   # Sélecteur de pods
   selector:
     matchLabels:
-      app: openclaw
-      app.kubernetes.io/name: openclaw
+      app: phoenix
+      app.kubernetes.io/name: phoenix
   # Template du pod
   template:
     metadata:
       labels:
-        app: openclaw
-        app.kubernetes.io/name: openclaw
-        app.kubernetes.io/instance: openclaw-production
+        app: phoenix
+        app.kubernetes.io/name: phoenix
+        app.kubernetes.io/instance: phoenix-production
         app.kubernetes.io/version: "2026.1.30"
         app.kubernetes.io/component: gateway
         # Labels pour Network Policies
-        network.openclaw.io/egress-proxy: "allowed"
-        network.openclaw.io/egress-ollama: "allowed"
+        network.phoenix.io/egress-proxy: "allowed"
+        network.phoenix.io/egress-ollama: "allowed"
       annotations:
         # Prometheus scraping
         prometheus.io/scrape: "true"
@@ -54,10 +54,10 @@ spec:
         prometheus.io/path: "/metrics"
         # Sécurité
         seccomp.security.alpha.kubernetes.io/pod: "runtime/default"
-        container.apparmor.security.beta.kubernetes.io/openclaw: "runtime/default"
+        container.apparmor.security.beta.kubernetes.io/phoenix: "runtime/default"
     spec:
       # Service Account dédié (pas default)
-      serviceAccountName: openclaw-sa
+      serviceAccountName: phoenix-sa
       automountServiceAccountToken: false
 
       # Contexte de sécurité du pod (Pod Security Standards: restricted)
@@ -119,10 +119,10 @@ spec:
               cpu: "50m"
               memory: "32Mi"
 
-      # Container principal OpenClaw
+      # Container principal Phoenix
       containers:
-        - name: openclaw
-          image: ghcr.io/openclaw/openclaw:2026.1.30
+        - name: phoenix
+          image: ghcr.io/phoenix/phoenix:2026.1.30
           imagePullPolicy: IfNotPresent
 
           # Ports exposés
@@ -136,9 +136,9 @@ spec:
             # Configuration de base
             - name: NODE_ENV
               value: "production"
-            - name: OPENCLAW_PORT
+            - name: PHOENIX_PORT
               value: "18789"
-            - name: OPENCLAW_HOST
+            - name: PHOENIX_HOST
               value: "0.0.0.0"
             # Connexion aux LLM locaux (via host.docker.internal)
             - name: OLLAMA_HOST
@@ -147,38 +147,38 @@ spec:
               value: "http://host.docker.internal:1234"
             # Proxy pour accès internet (via Squid)
             - name: HTTP_PROXY
-              value: "http://squid-proxy.openclaw.svc.cluster.local:3128"
+              value: "http://squid-proxy.phoenix.svc.cluster.local:3128"
             - name: HTTPS_PROXY
-              value: "http://squid-proxy.openclaw.svc.cluster.local:3128"
+              value: "http://squid-proxy.phoenix.svc.cluster.local:3128"
             - name: NO_PROXY
               value: "localhost,127.0.0.1,host.docker.internal,.cluster.local"
             # Sécurité
-            - name: OPENCLAW_SANDBOX_MODE
+            - name: PHOENIX_SANDBOX_MODE
               value: "non-main"
-            - name: OPENCLAW_DM_ACCESS
+            - name: PHOENIX_DM_ACCESS
               value: "pairing"
             # API Keys (depuis Secrets)
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-api-keys
+                  name: phoenix-api-keys
                   key: anthropic-api-key
                   optional: true
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-api-keys
+                  name: phoenix-api-keys
                   key: openai-api-key
                   optional: true
 
           # Montage des volumes
           volumeMounts:
             - name: config
-              mountPath: /home/node/.openclaw/openclaw.json
-              subPath: openclaw.json
+              mountPath: /home/node/.phoenix/phoenix.json
+              subPath: phoenix.json
               readOnly: true
             - name: data
-              mountPath: /home/node/.openclaw
+              mountPath: /home/node/.phoenix
             - name: tmp
               mountPath: /tmp
 
@@ -188,7 +188,7 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false  # OpenClaw a besoin d'écrire
+            readOnlyRootFilesystem: false  # Phoenix a besoin d'écrire
             capabilities:
               drop:
                 - ALL
@@ -239,13 +239,13 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: openclaw-config
+            name: phoenix-config
             items:
-              - key: openclaw.json
-                path: openclaw.json
+              - key: phoenix.json
+                path: phoenix.json
         - name: data
           persistentVolumeClaim:
-            claimName: openclaw-data
+            claimName: phoenix-data
         - name: tmp
           emptyDir:
             sizeLimit: 1Gi
@@ -266,29 +266,29 @@ spec:
             - "host.docker.internal"
 ---
 # =============================================================================
-# ServiceAccount dédié pour OpenClaw
+# ServiceAccount dédié pour Phoenix
 # Least Privilege : permissions minimales
 # =============================================================================
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: openclaw-sa
-  namespace: openclaw
+  name: phoenix-sa
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: service-account
 automountServiceAccountToken: false
 ---
 # =============================================================================
-# PersistentVolumeClaim pour les données OpenClaw
+# PersistentVolumeClaim pour les données Phoenix
 # =============================================================================
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: openclaw-data
-  namespace: openclaw
+  name: phoenix-data
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: storage
 spec:
   accessModes:

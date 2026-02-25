@@ -2,10 +2,10 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas connecter OpenClaw a tes outils de developpement : VS Code, Cursor et Windsurf. Ces integrations te permettent d'utiliser ton assistant IA local directement dans ton IDE.
+Dans ce chapitre, tu vas connecter Phoenix a tes outils de developpement : VS Code, Cursor et Windsurf. Ces integrations te permettent d'utiliser ton assistant IA local directement dans ton IDE.
 
 **Objectifs :**
-- Configurer l'extension VS Code pour OpenClaw
+- Configurer l'extension VS Code pour Phoenix
 - Integrer Cursor avec le gateway local
 - Configurer Windsurf pour utiliser ton LLM local
 - Creer des raccourcis et commandes personnalisees
@@ -16,7 +16,7 @@ Dans ce chapitre, tu vas connecter OpenClaw a tes outils de developpement : VS C
 
 | Composant | Requis | Verification |
 |-----------|--------|--------------|
-| OpenClaw Gateway | Actif sur 18789 | `curl http://localhost:18789/api/health` |
+| Phoenix Gateway | Actif sur 18789 | `curl http://localhost:18789/api/health` |
 | VS Code | 1.85+ | `code --version` |
 | Cursor | 0.40+ | Interface Cursor |
 | Windsurf | Derniere version | Interface Windsurf |
@@ -25,23 +25,23 @@ Dans ce chapitre, tu vas connecter OpenClaw a tes outils de developpement : VS C
 
 ## 📝 Étapes détaillées
 
-### Étape 1 : Configurer VS Code avec OpenClaw
+### Étape 1 : Configurer VS Code avec Phoenix
 
 **Pourquoi ?**
-VS Code est l'editeur le plus populaire. L'extension OpenClaw ajoute une sidebar IA et des commandes contextuelles pour interagir avec ton LLM local.
+VS Code est l'editeur le plus populaire. L'extension Phoenix ajoute une sidebar IA et des commandes contextuelles pour interagir avec ton LLM local.
 
 **Comment ?**
 
-Installe l'extension OpenClaw :
+Installe l'extension Phoenix :
 
 ```bash
-code --install-extension openclaw.openclaw-vscode
+code --install-extension phoenix.phoenix-vscode
 ```
 
 Ou depuis VS Code :
 1. Ouvre la palette de commandes : `Cmd+Shift+P`
 2. Tape "Extensions: Install Extensions"
-3. Cherche "OpenClaw"
+3. Cherche "Phoenix"
 4. Clique **Install**
 
 Configure l'extension :
@@ -54,16 +54,16 @@ Ajoute ou modifie :
 
 ```json
 {
-  "openclaw.gateway.url": "http://localhost:18789",
-  "openclaw.gateway.apiKey": "",
-  "openclaw.provider.default": "ollama",
-  "openclaw.model.default": "llama3.2:8b",
-  "openclaw.chat.streamResponse": true,
-  "openclaw.context.includeOpenFiles": true,
-  "openclaw.context.maxTokens": 4096,
-  "openclaw.shortcuts.explain": "Cmd+Shift+E",
-  "openclaw.shortcuts.refactor": "Cmd+Shift+R",
-  "openclaw.shortcuts.document": "Cmd+Shift+D"
+  "phoenix.gateway.url": "http://localhost:18789",
+  "phoenix.gateway.apiKey": "",
+  "phoenix.provider.default": "ollama",
+  "phoenix.model.default": "llama3.2:8b",
+  "phoenix.chat.streamResponse": true,
+  "phoenix.context.includeOpenFiles": true,
+  "phoenix.context.maxTokens": 4096,
+  "phoenix.shortcuts.explain": "Cmd+Shift+E",
+  "phoenix.shortcuts.refactor": "Cmd+Shift+R",
+  "phoenix.shortcuts.document": "Cmd+Shift+D"
 }
 ```
 
@@ -71,7 +71,7 @@ Redemarre VS Code.
 
 **Vérification :**
 1. Ouvre VS Code
-2. Clique sur l'icone OpenClaw dans la sidebar (patte de chat)
+2. Clique sur l'icone Phoenix dans la sidebar (patte de chat)
 3. Tape "Bonjour" dans le chat
 4. Tu dois recevoir une reponse du LLM local
 
@@ -86,28 +86,28 @@ L'extension offre des commandes contextuelles qui analysent ton code et utilisen
 
 **Chat contextuel :**
 1. Selectionne du code dans l'editeur
-2. Clic droit > "OpenClaw: Ask about selection"
+2. Clic droit > "Phoenix: Ask about selection"
 3. Pose ta question dans le chat
 
 **Explication de code :**
 1. Selectionne une fonction ou classe
-2. `Cmd+Shift+E` ou clic droit > "OpenClaw: Explain"
+2. `Cmd+Shift+E` ou clic droit > "Phoenix: Explain"
 3. Le LLM explique le code selectionne
 
 **Refactoring assiste :**
 1. Selectionne le code a ameliorer
-2. `Cmd+Shift+R` ou clic droit > "OpenClaw: Refactor"
+2. `Cmd+Shift+R` ou clic droit > "Phoenix: Refactor"
 3. Decris l'amelioration souhaitee
 4. Applique les suggestions
 
 **Generation de documentation :**
 1. Place le curseur sur une fonction
-2. `Cmd+Shift+D` ou clic droit > "OpenClaw: Document"
+2. `Cmd+Shift+D` ou clic droit > "Phoenix: Document"
 3. Le LLM genere les docstrings/JSDoc
 
 **Generation de tests :**
 1. Selectionne une fonction
-2. Palette de commandes > "OpenClaw: Generate Tests"
+2. Palette de commandes > "Phoenix: Generate Tests"
 3. Choisis le framework (Jest, Pytest, etc.)
 
 **Vérification :**
@@ -129,10 +129,10 @@ Ouvre dans VS Code, selectionne la fonction, et teste `Cmd+Shift+E`.
 
 ---
 
-### Étape 3 : Configurer Cursor avec OpenClaw
+### Étape 3 : Configurer Cursor avec Phoenix
 
 **Pourquoi ?**
-Cursor est un IDE base sur VS Code avec des fonctionnalites IA integrees. Tu peux le configurer pour utiliser ton gateway OpenClaw au lieu des API cloud.
+Cursor est un IDE base sur VS Code avec des fonctionnalites IA integrees. Tu peux le configurer pour utiliser ton gateway Phoenix au lieu des API cloud.
 
 **Comment ?**
 
@@ -144,7 +144,7 @@ Configure le proxy local :
 
 Dans Cursor, va dans **Settings > Models > OpenAI API Key** et configure :
 - API Base URL : `http://localhost:18789/v1`
-- API Key : `local` (ou ton token OpenClaw)
+- API Key : `local` (ou ton token Phoenix)
 
 Alternative via fichier de configuration :
 
@@ -173,10 +173,10 @@ Tu dois recevoir une reponse de ton LLM local.
 
 ---
 
-### Étape 4 : Configurer Windsurf avec OpenClaw
+### Étape 4 : Configurer Windsurf avec Phoenix
 
 **Pourquoi ?**
-Windsurf est un IDE IA qui peut utiliser des providers personnalises. L'integration avec OpenClaw te donne un controle total sur le modele utilise.
+Windsurf est un IDE IA qui peut utiliser des providers personnalises. L'integration avec Phoenix te donne un controle total sur le modele utilise.
 
 **Comment ?**
 
@@ -226,15 +226,15 @@ Les snippets permettent d'inserer rapidement des prompts frequents. Les template
 Cree des snippets VS Code :
 
 ```bash
-nano ~/.vscode/snippets/openclaw.code-snippets
+nano ~/.vscode/snippets/phoenix.code-snippets
 ```
 
 ```json
 {
-  "OpenClaw Review": {
+  "Phoenix Review": {
     "prefix": "ocreview",
     "body": [
-      "// @openclaw-review",
+      "// @phoenix-review",
       "// Analyse ce code pour:",
       "// - Bugs potentiels",
       "// - Problemes de performance",
@@ -242,36 +242,36 @@ nano ~/.vscode/snippets/openclaw.code-snippets
       "// - Suggestions d'amelioration",
       "$0"
     ],
-    "description": "Demande une review de code a OpenClaw"
+    "description": "Demande une review de code a Phoenix"
   },
-  "OpenClaw Test": {
+  "Phoenix Test": {
     "prefix": "octest",
     "body": [
-      "// @openclaw-generate-tests",
+      "// @phoenix-generate-tests",
       "// Framework: ${1|jest,pytest,mocha,vitest|}",
       "// Couverture: ${2|unit,integration,e2e|}",
       "// Style: ${3|bdd,tdd|}",
       "$0"
     ],
-    "description": "Genere des tests avec OpenClaw"
+    "description": "Genere des tests avec Phoenix"
   },
-  "OpenClaw Explain": {
+  "Phoenix Explain": {
     "prefix": "ocexplain",
     "body": [
-      "// @openclaw-explain",
+      "// @phoenix-explain",
       "// Niveau: ${1|debutant,intermediaire,expert|}",
       "// Focus: ${2|logique,performance,securite|}",
       "$0"
     ],
-    "description": "Demande une explication a OpenClaw"
+    "description": "Demande une explication a Phoenix"
   }
 }
 ```
 
-Configure des templates dans OpenClaw :
+Configure des templates dans Phoenix :
 
 ```bash
-nano ~/.openclaw/templates/code-review.json
+nano ~/.phoenix/templates/code-review.json
 ```
 
 ```json
@@ -289,7 +289,7 @@ nano ~/.openclaw/templates/code-review.json
 Utilise le template :
 
 ```bash
-docker exec openclaw-gateway openclaw template run code-review --code "function add(a,b){return a+b}"
+docker exec phoenix-gateway phoenix template run code-review --code "function add(a,b){return a+b}"
 ```
 
 **Vérification :**
@@ -300,14 +300,14 @@ Dans VS Code, tape `ocreview` et appuie sur Tab. Le snippet doit s'inserer.
 
 ## ✅ Checklist
 
-- [ ] Extension VS Code OpenClaw installee et configuree
+- [ ] Extension VS Code Phoenix installee et configuree
 - [ ] Chat VS Code connecte au gateway local
 - [ ] Raccourcis clavier fonctionnels (Explain, Refactor, Document)
-- [ ] Cursor configure avec l'endpoint OpenClaw
+- [ ] Cursor configure avec l'endpoint Phoenix
 - [ ] Chat inline Cursor utilise le LLM local
 - [ ] Windsurf configure avec le provider custom
 - [ ] Snippets personnalises crees
-- [ ] Templates OpenClaw configures
+- [ ] Templates Phoenix configures
 
 ---
 
@@ -324,10 +324,10 @@ curl http://localhost:18789/api/health
 
 Si erreur, redemarre le gateway :
 ```bash
-docker restart openclaw-gateway
+docker restart phoenix-gateway
 ```
 
-Verifie les parametres VS Code : `Cmd+,` > cherche "openclaw.gateway.url".
+Verifie les parametres VS Code : `Cmd+,` > cherche "phoenix.gateway.url".
 
 ---
 
@@ -377,7 +377,7 @@ Utilise un modele plus petit pour les completions :
 Reduis la fenetre de contexte :
 ```json
 {
-  "openclaw.context.maxTokens": 2048
+  "phoenix.context.maxTokens": 2048
 }
 ```
 
@@ -391,7 +391,7 @@ Reduis la fenetre de contexte :
 
 Verifie la syntaxe JSON :
 ```bash
-cat ~/.vscode/snippets/openclaw.code-snippets | jq .
+cat ~/.vscode/snippets/phoenix.code-snippets | jq .
 ```
 
 Recharge VS Code : `Cmd+Shift+P` > "Developer: Reload Window".
@@ -402,7 +402,7 @@ Recharge VS Code : `Cmd+Shift+P` > "Developer: Reload Window".
 
 | Ressource | URL |
 |-----------|-----|
-| Extension VS Code OpenClaw | https://marketplace.visualstudio.com/items?itemName=openclaw.openclaw-vscode |
+| Extension VS Code Phoenix | https://marketplace.visualstudio.com/items?itemName=phoenix.phoenix-vscode |
 | Documentation Cursor | https://cursor.sh/docs |
 | Documentation Windsurf | https://codeium.com/windsurf |
 | API OpenAI Compatible | https://platform.openai.com/docs/api-reference |
@@ -414,4 +414,4 @@ Recharge VS Code : `Cmd+Shift+P` > "Developer: Reload Window".
 
 Felicitations ! Tu as termine la partie "Utiliser". Tu sais maintenant connecter des LLM locaux, configurer des channels de messagerie, installer des skills, automatiser avec n8n et integrer tes outils de dev.
 
-Dans la prochaine partie, tu vas apprendre a **maintenir** ton installation OpenClaw : [Partie 5 - Maintenir](../05-maintenir/01-depannage-mac-m3.md).
+Dans la prochaine partie, tu vas apprendre a **maintenir** ton installation Phoenix : [Partie 5 - Maintenir](../05-maintenir/01-depannage-mac-m3.md).

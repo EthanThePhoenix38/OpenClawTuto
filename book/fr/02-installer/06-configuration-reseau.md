@@ -1,13 +1,13 @@
 # 🎯 2.6 - Configuration réseau isolé
 
 ## 📋 Ce que tu vas apprendre
-- Comment isoler OpenClaw du réseau Internet
+- Comment isoler Phoenix du réseau Internet
 - Comment configurer le pare-feu macOS
 - Comment créer des règles réseau Kubernetes
 - Comment sécuriser les communications entre composants
 
 ## 🛠️ Prérequis
-- Chapitre 2.5 complété (OpenClaw déployé et fonctionnel)
+- Chapitre 2.5 complété (Phoenix déployé et fonctionnel)
 - Accès administrateur sur le Mac
 - kubectl connecté au cluster k3s
 
@@ -23,8 +23,8 @@
 - Communications non autorisées entre pods
 
 **Ce qu'on va autoriser :**
-- Communication entre OpenClaw et PostgreSQL
-- Communication entre OpenClaw et Ollama/LM Studio sur le Mac
+- Communication entre Phoenix et PostgreSQL
+- Communication entre Phoenix et Ollama/LM Studio sur le Mac
 - Accès depuis le Mac local uniquement
 
 **Architecture réseau cible :**
@@ -36,7 +36,7 @@
 │  │                  Réseau local (192.168.x.x)        │ │
 │  │                                                    │ │
 │  │   ┌─────────┐     ┌─────────┐     ┌─────────┐    │ │
-│  │   │ Browser │────▶│OpenClaw │────▶│ Ollama  │    │ │
+│  │   │ Browser │────▶│Phoenix │────▶│ Ollama  │    │ │
 │  │   │localhost│     │ :18789  │     │ :11434  │    │ │
 │  │   └─────────┘     └────┬────┘     └─────────┘    │ │
 │  │                        │                          │ │
@@ -65,14 +65,14 @@
 
 **Créer les règles du pare-feu :**
 ```bash
-sudo cat << 'EOF' > /etc/pf.anchors/openclaw
-# Règles pare-feu OpenClaw
-# Bloque tout trafic sortant des ports OpenClaw vers Internet
+sudo cat << 'EOF' > /etc/pf.anchors/phoenix
+# Règles pare-feu Phoenix
+# Bloque tout trafic sortant des ports Phoenix vers Internet
 
 # Définition des variables
 ollama_port = "11434"
 lmstudio_port = "1234"
-openclaw_port = "18789"
+phoenix_port = "18789"
 k3s_port = "6443"
 postgres_port = "5432"
 
@@ -91,13 +91,13 @@ pass quick proto udp from any to any keep state
 # Bloquer le trafic sortant vers Internet depuis les ports sensibles
 block out quick proto tcp from any port $ollama_port to ! 192.168.0.0/16
 block out quick proto tcp from any port $lmstudio_port to ! 192.168.0.0/16
-block out quick proto tcp from any port $openclaw_port to ! 192.168.0.0/16
+block out quick proto tcp from any port $phoenix_port to ! 192.168.0.0/16
 EOF
 ```
 
 **Charger les règles :**
 ```bash
-echo 'anchor "openclaw"' | sudo tee -a /etc/pf.conf && echo 'load anchor "openclaw" from "/etc/pf.anchors/openclaw"' | sudo tee -a /etc/pf.conf
+echo 'anchor "phoenix"' | sudo tee -a /etc/pf.conf && echo 'load anchor "phoenix" from "/etc/pf.anchors/phoenix"' | sudo tee -a /etc/pf.conf
 ```
 
 **Activer le pare-feu :**
@@ -107,7 +107,7 @@ sudo pfctl -ef /etc/pf.conf
 
 **Vérification :**
 ```bash
-sudo pfctl -sr | grep openclaw
+sudo pfctl -sr | grep phoenix
 ```
 
 ---
@@ -151,33 +151,33 @@ kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --t
 
 **Créer la policy par défaut (deny all) :**
 ```bash
-cat << 'EOF' > ~/openclaw/k8s/base/network-policy-default.yaml
+cat << 'EOF' > ~/phoenix/k8s/base/network-policy-default.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-all
-  namespace: openclaw
+  namespace: phoenix
 spec:
   podSelector: {}
   policyTypes:
     - Ingress
     - Egress
 EOF
-kubectl apply -f ~/openclaw/k8s/base/network-policy-default.yaml
+kubectl apply -f ~/phoenix/k8s/base/network-policy-default.yaml
 ```
 
-**Créer la policy pour OpenClaw :**
+**Créer la policy pour Phoenix :**
 ```bash
-cat << 'EOF' > ~/openclaw/k8s/base/network-policy-openclaw.yaml
+cat << 'EOF' > ~/phoenix/k8s/base/network-policy-phoenix.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: openclaw-policy
-  namespace: openclaw
+  name: phoenix-policy
+  namespace: phoenix
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
     - Ingress
     - Egress
@@ -186,7 +186,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: openclaw
+              name: phoenix
       ports:
         - protocol: TCP
           port: 18789
@@ -200,7 +200,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: openclaw-db
+              app: phoenix-db
       ports:
         - protocol: TCP
           port: 5432
@@ -225,30 +225,30 @@ spec:
         - protocol: TCP
           port: 1234
 EOF
-kubectl apply -f ~/openclaw/k8s/base/network-policy-openclaw.yaml
+kubectl apply -f ~/phoenix/k8s/base/network-policy-phoenix.yaml
 ```
 
 **Créer la policy pour PostgreSQL :**
 ```bash
-cat << 'EOF' > ~/openclaw/k8s/base/network-policy-postgres.yaml
+cat << 'EOF' > ~/phoenix/k8s/base/network-policy-postgres.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: postgres-policy
-  namespace: openclaw
+  namespace: phoenix
 spec:
   podSelector:
     matchLabels:
-      app: openclaw-db
+      app: phoenix-db
   policyTypes:
     - Ingress
     - Egress
   ingress:
-    # Seulement OpenClaw peut se connecter
+    # Seulement Phoenix peut se connecter
     - from:
         - podSelector:
             matchLabels:
-              app: openclaw
+              app: phoenix
       ports:
         - protocol: TCP
           port: 5432
@@ -263,20 +263,20 @@ spec:
         - protocol: UDP
           port: 53
 EOF
-kubectl apply -f ~/openclaw/k8s/base/network-policy-postgres.yaml
+kubectl apply -f ~/phoenix/k8s/base/network-policy-postgres.yaml
 ```
 
 **Vérification :**
 ```bash
-kubectl get networkpolicy -n openclaw
+kubectl get networkpolicy -n phoenix
 ```
 
 **Résultat attendu :**
 ```
 NAME               POD-SELECTOR       AGE
 default-deny-all   <none>             1m
-openclaw-policy    app=openclaw       1m
-postgres-policy    app=openclaw-db    1m
+phoenix-policy    app=phoenix       1m
+postgres-policy    app=phoenix-db    1m
 ```
 
 ---
@@ -302,7 +302,7 @@ export OLLAMA_HOST="0.0.0.0:11434"
 
 **Script pour basculer entre modes :**
 ```bash
-cat << 'EOF' > ~/openclaw/ollama-mode.sh
+cat << 'EOF' > ~/phoenix/ollama-mode.sh
 #!/bin/bash
 case "$1" in
     local)
@@ -324,7 +324,7 @@ case "$1" in
         ;;
 esac
 EOF
-chmod +x ~/openclaw/ollama-mode.sh
+chmod +x ~/phoenix/ollama-mode.sh
 ```
 
 ---
@@ -382,12 +382,12 @@ multipass exec k3s-master -- sudo iptables -L OUTPUT -n
 
 ### Étape 7 : Configurer les accès par IP uniquement
 
-**Pourquoi ?** On limite l'accès à OpenClaw à certaines adresses IP.
+**Pourquoi ?** On limite l'accès à Phoenix à certaines adresses IP.
 
 **Créer un fichier d'IP autorisées :**
 ```bash
-cat << 'EOF' > ~/openclaw/config/allowed-ips.txt
-# IPs autorisées à accéder à OpenClaw
+cat << 'EOF' > ~/phoenix/config/allowed-ips.txt
+# IPs autorisées à accéder à Phoenix
 127.0.0.1
 192.168.1.0/24
 10.0.0.0/8
@@ -396,16 +396,16 @@ EOF
 
 **Mettre à jour la Network Policy :**
 ```bash
-cat << 'EOF' > ~/openclaw/k8s/base/network-policy-whitelist.yaml
+cat << 'EOF' > ~/phoenix/k8s/base/network-policy-whitelist.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: openclaw-ip-whitelist
-  namespace: openclaw
+  name: phoenix-ip-whitelist
+  namespace: phoenix
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
     - Ingress
   ingress:
@@ -423,7 +423,7 @@ spec:
         - protocol: TCP
           port: 18789
 EOF
-kubectl apply -f ~/openclaw/k8s/base/network-policy-whitelist.yaml
+kubectl apply -f ~/phoenix/k8s/base/network-policy-whitelist.yaml
 ```
 
 ---
@@ -434,31 +434,31 @@ kubectl apply -f ~/openclaw/k8s/base/network-policy-whitelist.yaml
 
 **Créer un ConfigMap pour les logs :**
 ```bash
-cat << 'EOF' > ~/openclaw/k8s/base/logging-config.yaml
+cat << 'EOF' > ~/phoenix/k8s/base/logging-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: logging-config
-  namespace: openclaw
+  namespace: phoenix
 data:
   LOG_LEVEL: "info"
   LOG_SECURITY: "true"
   LOG_ACCESS: "true"
   LOG_FORMAT: "json"
 EOF
-kubectl apply -f ~/openclaw/k8s/base/logging-config.yaml
+kubectl apply -f ~/phoenix/k8s/base/logging-config.yaml
 ```
 
 **Script pour surveiller les tentatives de connexion :**
 ```bash
-cat << 'EOF' > ~/openclaw/monitor-access.sh
+cat << 'EOF' > ~/phoenix/monitor-access.sh
 #!/bin/bash
-echo "=== Surveillance des accès OpenClaw ==="
+echo "=== Surveillance des accès Phoenix ==="
 echo "Appuie sur Ctrl+C pour arrêter"
 echo ""
 
-# Suivre les logs OpenClaw en temps réel
-kubectl logs -n openclaw -l app=openclaw -f --since=1m | while read line; do
+# Suivre les logs Phoenix en temps réel
+kubectl logs -n phoenix -l app=phoenix -f --since=1m | while read line; do
     # Filtrer les accès
     if echo "$line" | grep -qE "(access|connection|auth|security)"; then
         TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
@@ -466,17 +466,17 @@ kubectl logs -n openclaw -l app=openclaw -f --since=1m | while read line; do
     fi
 done
 EOF
-chmod +x ~/openclaw/monitor-access.sh
+chmod +x ~/phoenix/monitor-access.sh
 ```
 
 **Surveiller les connexions réseau :**
 ```bash
-cat << 'EOF' > ~/openclaw/monitor-network.sh
+cat << 'EOF' > ~/phoenix/monitor-network.sh
 #!/bin/bash
-echo "=== Surveillance réseau OpenClaw ==="
+echo "=== Surveillance réseau Phoenix ==="
 echo ""
 
-echo "1. Connexions actives sur les ports OpenClaw :"
+echo "1. Connexions actives sur les ports Phoenix :"
 lsof -i :11434 -i :1234 -i :18789 -i :6443 | grep -v "^COMMAND"
 
 echo ""
@@ -491,7 +491,7 @@ sudo log show --predicate 'process == "socketfilterfw"' --last 5m 2>/dev/null | 
 echo ""
 echo "=== Fin de la surveillance ==="
 EOF
-chmod +x ~/openclaw/monitor-network.sh
+chmod +x ~/phoenix/monitor-network.sh
 ```
 
 ---
@@ -502,23 +502,23 @@ chmod +x ~/openclaw/monitor-network.sh
 
 **Script de test :**
 ```bash
-cat << 'EOF' > ~/openclaw/test-isolation.sh
+cat << 'EOF' > ~/phoenix/test-isolation.sh
 #!/bin/bash
-echo "=== Test d'isolation réseau OpenClaw ==="
+echo "=== Test d'isolation réseau Phoenix ==="
 echo ""
 
-# Test 1: Vérifier que OpenClaw est accessible localement
-echo "1. Test accès local à OpenClaw..."
+# Test 1: Vérifier que Phoenix est accessible localement
+echo "1. Test accès local à Phoenix..."
 if curl -s http://localhost:18789/health > /dev/null 2>&1; then
-    echo "   ✅ OpenClaw accessible localement"
+    echo "   ✅ Phoenix accessible localement"
 else
     # Démarrer port-forward si nécessaire
-    kubectl port-forward -n openclaw svc/openclaw 18789:18789 &>/dev/null &
+    kubectl port-forward -n phoenix svc/phoenix 18789:18789 &>/dev/null &
     sleep 2
     if curl -s http://localhost:18789/health > /dev/null 2>&1; then
-        echo "   ✅ OpenClaw accessible (via port-forward)"
+        echo "   ✅ Phoenix accessible (via port-forward)"
     else
-        echo "   ❌ OpenClaw non accessible"
+        echo "   ❌ Phoenix non accessible"
     fi
 fi
 
@@ -534,7 +534,7 @@ fi
 # Test 3: Vérifier que les pods ne peuvent pas accéder à Internet
 echo ""
 echo "3. Test isolation Internet des pods..."
-INTERNET_TEST=$(kubectl run -n openclaw test-internet --image=curlimages/curl --rm -it --restart=Never -- curl -s --connect-timeout 5 http://google.com 2>/dev/null)
+INTERNET_TEST=$(kubectl run -n phoenix test-internet --image=curlimages/curl --rm -it --restart=Never -- curl -s --connect-timeout 5 http://google.com 2>/dev/null)
 if [ -z "$INTERNET_TEST" ]; then
     echo "   ✅ Pods isolés d'Internet"
 else
@@ -544,7 +544,7 @@ fi
 # Test 4: Vérifier les Network Policies
 echo ""
 echo "4. Network Policies actives :"
-kubectl get networkpolicy -n openclaw --no-headers | while read line; do
+kubectl get networkpolicy -n phoenix --no-headers | while read line; do
     echo "   - $line"
 done
 
@@ -556,29 +556,29 @@ echo "   $FW_STATUS"
 
 # Test 6: Ports ouverts
 echo ""
-echo "6. Ports OpenClaw ouverts :"
+echo "6. Ports Phoenix ouverts :"
 echo "   - 11434 (Ollama): $(lsof -i :11434 | grep LISTEN | wc -l | tr -d ' ') processus"
 echo "   - 1234 (LM Studio): $(lsof -i :1234 | grep LISTEN | wc -l | tr -d ' ') processus"
-echo "   - 18789 (OpenClaw): $(lsof -i :18789 | grep LISTEN | wc -l | tr -d ' ') processus"
+echo "   - 18789 (Phoenix): $(lsof -i :18789 | grep LISTEN | wc -l | tr -d ' ') processus"
 echo "   - 6443 (k3s): $(lsof -i :6443 | grep LISTEN | wc -l | tr -d ' ') processus"
 
 echo ""
 echo "=== Test d'isolation terminé ==="
 EOF
-chmod +x ~/openclaw/test-isolation.sh
+chmod +x ~/phoenix/test-isolation.sh
 ```
 
 **Exécuter le test :**
 ```bash
-~/openclaw/test-isolation.sh
+~/phoenix/test-isolation.sh
 ```
 
 **Résultat attendu :**
 ```
-=== Test d'isolation réseau OpenClaw ===
+=== Test d'isolation réseau Phoenix ===
 
-1. Test accès local à OpenClaw...
-   ✅ OpenClaw accessible localement
+1. Test accès local à Phoenix...
+   ✅ Phoenix accessible localement
 
 2. Test accès à Ollama...
    ✅ Ollama accessible
@@ -588,16 +588,16 @@ chmod +x ~/openclaw/test-isolation.sh
 
 4. Network Policies actives :
    - default-deny-all   <none>
-   - openclaw-policy    app=openclaw
-   - postgres-policy    app=openclaw-db
+   - phoenix-policy    app=phoenix
+   - postgres-policy    app=phoenix-db
 
 5. État du pare-feu macOS :
    Firewall is enabled.
 
-6. Ports OpenClaw ouverts :
+6. Ports Phoenix ouverts :
    - 11434 (Ollama): 1 processus
    - 1234 (LM Studio): 1 processus
-   - 18789 (OpenClaw): 1 processus
+   - 18789 (Phoenix): 1 processus
    - 6443 (k3s): 1 processus
 
 === Test d'isolation terminé ===
@@ -611,11 +611,11 @@ chmod +x ~/openclaw/test-isolation.sh
 
 **Comment ?**
 ```bash
-cat << 'EOF' > ~/openclaw/security-control.sh
+cat << 'EOF' > ~/phoenix/security-control.sh
 #!/bin/bash
 
 show_status() {
-    echo "=== État de la sécurité OpenClaw ==="
+    echo "=== État de la sécurité Phoenix ==="
     echo ""
     echo "Pare-feu macOS:"
     sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null
@@ -624,7 +624,7 @@ show_status() {
     sudo pfctl -s info 2>/dev/null | head -5
     echo ""
     echo "Network Policies k8s:"
-    kubectl get networkpolicy -n openclaw --no-headers 2>/dev/null
+    kubectl get networkpolicy -n phoenix --no-headers 2>/dev/null
     echo ""
     echo "Connexions actives:"
     netstat -an | grep -E ":(11434|1234|18789|6443)" | grep LISTEN
@@ -640,9 +640,9 @@ enable_security() {
     sudo pfctl -ef /etc/pf.conf 2>/dev/null
 
     # Network Policies
-    kubectl apply -f ~/openclaw/k8s/base/network-policy-default.yaml
-    kubectl apply -f ~/openclaw/k8s/base/network-policy-openclaw.yaml
-    kubectl apply -f ~/openclaw/k8s/base/network-policy-postgres.yaml
+    kubectl apply -f ~/phoenix/k8s/base/network-policy-default.yaml
+    kubectl apply -f ~/phoenix/k8s/base/network-policy-phoenix.yaml
+    kubectl apply -f ~/phoenix/k8s/base/network-policy-postgres.yaml
 
     echo "✅ Protections activées"
 }
@@ -651,7 +651,7 @@ disable_security() {
     echo "⚠️  Désactivation des protections (pour debug uniquement)..."
 
     # Supprimer les Network Policies
-    kubectl delete networkpolicy --all -n openclaw 2>/dev/null
+    kubectl delete networkpolicy --all -n phoenix 2>/dev/null
 
     echo "⚠️  Network Policies désactivées"
     echo "Note: Le pare-feu macOS reste actif pour la sécurité de base"
@@ -668,7 +668,7 @@ case "$1" in
         disable_security
         ;;
     test)
-        ~/openclaw/test-isolation.sh
+        ~/phoenix/test-isolation.sh
         ;;
     *)
         echo "Usage: $0 {status|enable|disable|test}"
@@ -681,19 +681,19 @@ case "$1" in
         ;;
 esac
 EOF
-chmod +x ~/openclaw/security-control.sh
+chmod +x ~/phoenix/security-control.sh
 ```
 
 **Utilisation :**
 ```bash
 # Voir le statut
-~/openclaw/security-control.sh status
+~/phoenix/security-control.sh status
 
 # Activer toutes les protections
-~/openclaw/security-control.sh enable
+~/phoenix/security-control.sh enable
 
 # Tester l'isolation
-~/openclaw/security-control.sh test
+~/phoenix/security-control.sh test
 ```
 
 ---
@@ -706,7 +706,7 @@ Avant de terminer cette partie, vérifie que :
 - [ ] Le pare-feu applicatif macOS est activé
 - [ ] Calico est installé dans k3s
 - [ ] La Network Policy "deny all" est appliquée
-- [ ] Les Network Policies OpenClaw et PostgreSQL sont appliquées
+- [ ] Les Network Policies Phoenix et PostgreSQL sont appliquées
 - [ ] Ollama est configuré en mode local
 - [ ] Les règles iptables sont appliquées dans la VM k3s
 - [ ] Les tests d'isolation passent
@@ -717,12 +717,12 @@ Avant de terminer cette partie, vérifie que :
 
 ## ⚠️ Dépannage
 
-### OpenClaw ne peut plus joindre Ollama
+### Phoenix ne peut plus joindre Ollama
 **Symptôme :** Erreur de connexion à l'IA
 **Solution :**
 1. Vérifie que la Network Policy autorise le trafic :
 ```bash
-kubectl describe networkpolicy openclaw-policy -n openclaw
+kubectl describe networkpolicy phoenix-policy -n phoenix
 ```
 2. Vérifie qu'Ollama écoute sur la bonne interface :
 ```bash
@@ -733,11 +733,11 @@ lsof -i :11434
 **Symptôme :** Pods bloqués en "ContainerCreating"
 **Solution :** La policy "deny all" peut bloquer les requêtes DNS :
 ```bash
-kubectl delete networkpolicy default-deny-all -n openclaw
+kubectl delete networkpolicy default-deny-all -n phoenix
 ```
 Puis recrée-la avec les bonnes exceptions DNS.
 
-### Impossible d'accéder à OpenClaw depuis le navigateur
+### Impossible d'accéder à Phoenix depuis le navigateur
 **Symptôme :** Connexion refusée
 **Solutions :**
 1. Vérifie le port-forward :
@@ -746,7 +746,7 @@ ps aux | grep port-forward
 ```
 2. Relance-le si nécessaire :
 ```bash
-kubectl port-forward -n openclaw svc/openclaw 18789:18789
+kubectl port-forward -n phoenix svc/phoenix 18789:18789
 ```
 
 ### Le pare-feu bloque trop de choses
@@ -761,7 +761,7 @@ Puis réajuste les règles.
 **Symptôme :** Beaucoup de connexions refusées dans les logs
 **Solution :** C'est normal si les règles fonctionnent ! Vérifie les sources :
 ```bash
-~/openclaw/monitor-network.sh
+~/phoenix/monitor-network.sh
 ```
 
 ---
@@ -783,7 +783,7 @@ Puis réajuste les règles.
 | macOS | pf (Packet Filter) | 11434, 1234, 18789 |
 | k3s | Network Policies | Tous les pods |
 | k3s | iptables | Trafic sortant |
-| Application | CORS | API OpenClaw |
+| Application | CORS | API Phoenix |
 
 ---
 
@@ -796,7 +796,7 @@ Tu as terminé la **PARTIE 2 : INSTALLER** !
 2. Installé Ollama pour faire tourner les modèles IA nativement
 3. Installé LM Studio pour tester et comparer les modèles
 4. Déployé k3s, un cluster Kubernetes léger
-5. Déployé OpenClaw version 2026.1.30
+5. Déployé Phoenix version 2026.1.30
 6. Sécurisé tout le système avec une isolation réseau complète
 
 **Tu as maintenant :**
@@ -809,7 +809,7 @@ Tu as terminé la **PARTIE 2 : INSTALLER** !
 
 ## ➡️ Prochaine partie
 
-Dans la **PARTIE 3 : CONFIGURER**, on va personnaliser OpenClaw pour tes besoins :
+Dans la **PARTIE 3 : CONFIGURER**, on va personnaliser Phoenix pour tes besoins :
 - Ajouter des utilisateurs
 - Configurer les modèles par défaut
 - Personnaliser l'interface

@@ -2,7 +2,7 @@
 
 ## 📋 Ce que tu vas apprendre
 
-- Sauvegarder automatiquement OpenClaw
+- Sauvegarder automatiquement Phoenix
 - Restaurer en cas de problème
 - Configurer des backups incrémentaux
 - Tester tes sauvegardes
@@ -11,7 +11,7 @@
 
 - [Chapitre 3.6](./06-monitoring-alertes.md) complété
 - k3s opérationnel
-- OpenClaw déployé
+- Phoenix déployé
 
 ---
 
@@ -29,9 +29,9 @@
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  🔴 CRITIQUE (perte = catastrophe)                              │
-│  ├── ~/.openclaw/openclaw.json (configuration)                  │
-│  ├── ~/.openclaw/credentials/ (authentification)                │
-│  └── ~/.openclaw/agents/*/sessions/ (conversations)             │
+│  ├── ~/.phoenix/phoenix.json (configuration)                  │
+│  ├── ~/.phoenix/credentials/ (authentification)                │
+│  └── ~/.phoenix/agents/*/sessions/ (conversations)             │
 │                                                                 │
 │  🟠 IMPORTANT (perte = embêtant)                                │
 │  ├── Kubernetes Secrets (API keys)                              │
@@ -52,10 +52,10 @@
 **Comment ?**
 
 ```bash
-cat << 'EOFSCRIPT' > ~/scripts/backup-openclaw.sh
+cat << 'EOFSCRIPT' > ~/scripts/backup-phoenix.sh
 #!/bin/bash
 # =============================================================================
-# Script de backup OpenClaw
+# Script de backup Phoenix
 # Version: 1.0.0
 # Auteur: Ethan Bernier
 # ORCID: 0009-0008-9839-5763
@@ -64,11 +64,11 @@ cat << 'EOFSCRIPT' > ~/scripts/backup-openclaw.sh
 set -euo pipefail
 
 # Configuration
-BACKUP_DIR="${HOME}/backups/openclaw"
-OPENCLAW_DIR="${HOME}/.openclaw"
+BACKUP_DIR="${HOME}/backups/phoenix"
+PHOENIX_DIR="${HOME}/.phoenix"
 RETENTION_DAYS=30
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_NAME="openclaw_backup_${DATE}"
+BACKUP_NAME="phoenix_backup_${DATE}"
 
 # Couleurs
 RED='\033[0;31m'
@@ -83,56 +83,56 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # Créer le répertoire de backup
 mkdir -p "${BACKUP_DIR}"
 
-log_info "Démarrage du backup OpenClaw - ${DATE}"
+log_info "Démarrage du backup Phoenix - ${DATE}"
 
-# 1. Backup des fichiers locaux OpenClaw
-log_info "Sauvegarde des fichiers OpenClaw..."
-if [ -d "${OPENCLAW_DIR}" ]; then
-    tar -czf "${BACKUP_DIR}/${BACKUP_NAME}_files.tar.gz" -C "${HOME}" .openclaw 2>/dev/null || log_warn "Certains fichiers n'ont pas pu être sauvegardés"
+# 1. Backup des fichiers locaux Phoenix
+log_info "Sauvegarde des fichiers Phoenix..."
+if [ -d "${PHOENIX_DIR}" ]; then
+    tar -czf "${BACKUP_DIR}/${BACKUP_NAME}_files.tar.gz" -C "${HOME}" .phoenix 2>/dev/null || log_warn "Certains fichiers n'ont pas pu être sauvegardés"
     log_info "Fichiers sauvegardés: ${BACKUP_DIR}/${BACKUP_NAME}_files.tar.gz"
 else
-    log_error "Répertoire ${OPENCLAW_DIR} non trouvé"
+    log_error "Répertoire ${PHOENIX_DIR} non trouvé"
 fi
 
 # 2. Backup des ressources Kubernetes
 log_info "Sauvegarde des ressources Kubernetes..."
 
 # Secrets (chiffrés en base64)
-kubectl get secrets -n openclaw -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_secrets.yaml" 2>/dev/null || log_warn "Pas de secrets à sauvegarder"
+kubectl get secrets -n phoenix -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_secrets.yaml" 2>/dev/null || log_warn "Pas de secrets à sauvegarder"
 
 # ConfigMaps
-kubectl get configmaps -n openclaw -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_configmaps.yaml" 2>/dev/null || log_warn "Pas de configmaps à sauvegarder"
+kubectl get configmaps -n phoenix -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_configmaps.yaml" 2>/dev/null || log_warn "Pas de configmaps à sauvegarder"
 
 # PersistentVolumeClaims
-kubectl get pvc -n openclaw -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_pvc.yaml" 2>/dev/null || log_warn "Pas de PVC à sauvegarder"
+kubectl get pvc -n phoenix -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_pvc.yaml" 2>/dev/null || log_warn "Pas de PVC à sauvegarder"
 
 # Deployments et Services
-kubectl get deployments,services,networkpolicies -n openclaw -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_k8s_resources.yaml" 2>/dev/null || log_warn "Pas de ressources K8s à sauvegarder"
+kubectl get deployments,services,networkpolicies -n phoenix -o yaml > "${BACKUP_DIR}/${BACKUP_NAME}_k8s_resources.yaml" 2>/dev/null || log_warn "Pas de ressources K8s à sauvegarder"
 
 log_info "Ressources Kubernetes sauvegardées"
 
 # 3. Backup des données des PersistentVolumes
 log_info "Sauvegarde des données persistantes..."
 
-# Identifier le pod OpenClaw
-POD_NAME=$(kubectl get pods -n openclaw -l app=openclaw -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+# Identifier le pod Phoenix
+POD_NAME=$(kubectl get pods -n phoenix -l app=phoenix -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
 
 if [ -n "${POD_NAME}" ]; then
-    kubectl exec -n openclaw "${POD_NAME}" -- tar -czf - /data 2>/dev/null > "${BACKUP_DIR}/${BACKUP_NAME}_data.tar.gz" || log_warn "Pas de données /data à sauvegarder"
+    kubectl exec -n phoenix "${POD_NAME}" -- tar -czf - /data 2>/dev/null > "${BACKUP_DIR}/${BACKUP_NAME}_data.tar.gz" || log_warn "Pas de données /data à sauvegarder"
     log_info "Données persistantes sauvegardées"
 else
-    log_warn "Pod OpenClaw non trouvé, skip backup des données"
+    log_warn "Pod Phoenix non trouvé, skip backup des données"
 fi
 
 # 4. Créer un manifest de restauration
 log_info "Création du manifest de restauration..."
 cat << EOF > "${BACKUP_DIR}/${BACKUP_NAME}_manifest.txt"
-# Manifest de backup OpenClaw
+# Manifest de backup Phoenix
 # Date: ${DATE}
 # Version: 1.0.0
 
 Fichiers inclus:
-- ${BACKUP_NAME}_files.tar.gz (config OpenClaw)
+- ${BACKUP_NAME}_files.tar.gz (config Phoenix)
 - ${BACKUP_NAME}_secrets.yaml (Kubernetes Secrets)
 - ${BACKUP_NAME}_configmaps.yaml (Kubernetes ConfigMaps)
 - ${BACKUP_NAME}_pvc.yaml (PersistentVolumeClaims)
@@ -160,7 +160,7 @@ log_info "Taille totale du backup: ${TOTAL_SIZE}"
 
 # 6. Nettoyage des anciens backups
 log_info "Nettoyage des backups de plus de ${RETENTION_DAYS} jours..."
-find "${BACKUP_DIR}" -name "openclaw_backup_*" -type f -mtime +${RETENTION_DAYS} -delete 2>/dev/null || true
+find "${BACKUP_DIR}" -name "phoenix_backup_*" -type f -mtime +${RETENTION_DAYS} -delete 2>/dev/null || true
 log_info "Nettoyage terminé"
 
 # 7. Résumé
@@ -171,13 +171,13 @@ log_info "Préfixe: ${BACKUP_NAME}"
 log_info "========================================"
 EOFSCRIPT
 
-chmod +x ~/scripts/backup-openclaw.sh
+chmod +x ~/scripts/backup-phoenix.sh
 ```
 
 **Vérification :**
 
 ```bash
-ls -la ~/scripts/backup-openclaw.sh
+ls -la ~/scripts/backup-phoenix.sh
 ```
 
 ### Étape 3 : Tester le backup manuellement
@@ -187,14 +187,14 @@ ls -la ~/scripts/backup-openclaw.sh
 **Comment ?**
 
 ```bash
-~/scripts/backup-openclaw.sh
+~/scripts/backup-phoenix.sh
 ```
 
 **Résultat attendu :**
 ```
-[INFO] Démarrage du backup OpenClaw - 20260202_143000
-[INFO] Sauvegarde des fichiers OpenClaw...
-[INFO] Fichiers sauvegardés: /Users/ethan/backups/openclaw/openclaw_backup_20260202_143000_files.tar.gz
+[INFO] Démarrage du backup Phoenix - 20260202_143000
+[INFO] Sauvegarde des fichiers Phoenix...
+[INFO] Fichiers sauvegardés: /Users/ethan/backups/phoenix/phoenix_backup_20260202_143000_files.tar.gz
 [INFO] Sauvegarde des ressources Kubernetes...
 [INFO] Ressources Kubernetes sauvegardées
 [INFO] BACKUP TERMINÉ AVEC SUCCÈS
@@ -203,7 +203,7 @@ ls -la ~/scripts/backup-openclaw.sh
 **Vérifier les fichiers créés :**
 
 ```bash
-ls -la ~/backups/openclaw/
+ls -la ~/backups/phoenix/
 ```
 
 ### Étape 4 : Configurer le backup automatique avec cron
@@ -221,7 +221,7 @@ crontab -e
 2. Ajouter cette ligne (backup tous les jours à 3h du matin) :
 
 ```
-0 3 * * * /Users/$(whoami)/scripts/backup-openclaw.sh >> /Users/$(whoami)/backups/openclaw/cron.log 2>&1
+0 3 * * * /Users/$(whoami)/scripts/backup-phoenix.sh >> /Users/$(whoami)/backups/phoenix/cron.log 2>&1
 ```
 
 **Vérification :**
@@ -237,10 +237,10 @@ crontab -l
 **Comment ?**
 
 ```bash
-cat << 'EOFSCRIPT' > ~/scripts/restore-openclaw.sh
+cat << 'EOFSCRIPT' > ~/scripts/restore-phoenix.sh
 #!/bin/bash
 # =============================================================================
-# Script de restauration OpenClaw
+# Script de restauration Phoenix
 # Version: 1.0.0
 # Auteur: Ethan Bernier
 # =============================================================================
@@ -257,7 +257,7 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-BACKUP_DIR="${HOME}/backups/openclaw"
+BACKUP_DIR="${HOME}/backups/phoenix"
 
 # Lister les backups disponibles
 echo "Backups disponibles:"
@@ -267,7 +267,7 @@ ls -1 "${BACKUP_DIR}"/*_manifest.txt 2>/dev/null | while read f; do
 done
 
 echo ""
-read -p "Entrez le préfixe du backup à restaurer (ex: openclaw_backup_20260202_143000): " BACKUP_PREFIX
+read -p "Entrez le préfixe du backup à restaurer (ex: phoenix_backup_20260202_143000): " BACKUP_PREFIX
 
 if [ -z "${BACKUP_PREFIX}" ]; then
     log_error "Aucun backup sélectionné"
@@ -305,7 +305,7 @@ if [ "${CONFIRM}" != "y" ]; then
 fi
 
 # 1. Restaurer les fichiers locaux
-log_info "Restauration des fichiers OpenClaw..."
+log_info "Restauration des fichiers Phoenix..."
 if [ -f "${BACKUP_DIR}/${BACKUP_PREFIX}_files.tar.gz" ]; then
     tar -xzf "${BACKUP_DIR}/${BACKUP_PREFIX}_files.tar.gz" -C "${HOME}"
     log_info "Fichiers restaurés"
@@ -334,20 +334,20 @@ if [ -f "${BACKUP_DIR}/${BACKUP_PREFIX}_k8s_resources.yaml" ]; then
     log_info "Ressources K8s restaurées"
 fi
 
-# 3. Redémarrer OpenClaw
-log_info "Redémarrage d'OpenClaw..."
-kubectl rollout restart deployment/openclaw -n openclaw 2>/dev/null || log_warn "Déploiement non trouvé"
+# 3. Redémarrer Phoenix
+log_info "Redémarrage d'Phoenix..."
+kubectl rollout restart deployment/phoenix -n phoenix 2>/dev/null || log_warn "Déploiement non trouvé"
 
 # 4. Attendre que le pod soit ready
 log_info "Attente du démarrage..."
-kubectl wait --for=condition=ready pod -l app=openclaw -n openclaw --timeout=120s 2>/dev/null || log_warn "Timeout en attendant le pod"
+kubectl wait --for=condition=ready pod -l app=phoenix -n phoenix --timeout=120s 2>/dev/null || log_warn "Timeout en attendant le pod"
 
 log_info "========================================"
 log_info "RESTAURATION TERMINÉE"
 log_info "========================================"
 EOFSCRIPT
 
-chmod +x ~/scripts/restore-openclaw.sh
+chmod +x ~/scripts/restore-phoenix.sh
 ```
 
 ### Étape 6 : Backup vers stockage externe (optionnel)
@@ -372,7 +372,7 @@ brew install rclone && rclone config
 Puis ajouter au script de backup :
 
 ```bash
-rclone sync ~/backups/openclaw b2:mon-bucket-openclaw/backups --progress
+rclone sync ~/backups/phoenix b2:mon-bucket-phoenix/backups --progress
 ```
 
 ### Étape 7 : Tester la restauration complète
@@ -384,25 +384,25 @@ rclone sync ~/backups/openclaw b2:mon-bucket-openclaw/backups --progress
 1. Créer un environnement de test :
 
 ```bash
-kubectl create namespace openclaw-test
+kubectl create namespace phoenix-test
 ```
 
 2. Restaurer dans l'environnement de test :
 
 ```bash
-sed 's/namespace: openclaw/namespace: openclaw-test/g' ~/backups/openclaw/openclaw_backup_*_k8s_resources.yaml | kubectl apply -f -
+sed 's/namespace: phoenix/namespace: phoenix-test/g' ~/backups/phoenix/phoenix_backup_*_k8s_resources.yaml | kubectl apply -f -
 ```
 
 3. Vérifier que tout fonctionne :
 
 ```bash
-kubectl get pods -n openclaw-test
+kubectl get pods -n phoenix-test
 ```
 
 4. Nettoyer :
 
 ```bash
-kubectl delete namespace openclaw-test
+kubectl delete namespace phoenix-test
 ```
 
 ---
@@ -415,8 +415,8 @@ kubectl delete namespace openclaw-test
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  3 copies de tes données                                        │
-│  ├── 1. Données originales (~/.openclaw)                        │
-│  ├── 2. Backup local (~/backups/openclaw)                       │
+│  ├── 1. Données originales (~/.phoenix)                        │
+│  ├── 2. Backup local (~/backups/phoenix)                       │
 │  └── 3. Backup externe (cloud ou NAS)                           │
 │                                                                 │
 │  2 types de supports différents                                 │
@@ -449,7 +449,7 @@ kubectl delete namespace openclaw-test
 
 **Solution :**
 ```bash
-chmod 700 ~/.openclaw && chmod 600 ~/.openclaw/credentials/*
+chmod 700 ~/.phoenix && chmod 600 ~/.phoenix/credentials/*
 ```
 
 **Problème :** "Les checksums ne correspondent pas"
@@ -460,7 +460,7 @@ chmod 700 ~/.openclaw && chmod 600 ~/.openclaw/credentials/*
 
 **Solution :**
 ```bash
-kubectl delete -f ~/backups/openclaw/openclaw_backup_*_k8s_resources.yaml --ignore-not-found && kubectl apply -f ~/backups/openclaw/openclaw_backup_*_k8s_resources.yaml
+kubectl delete -f ~/backups/phoenix/phoenix_backup_*_k8s_resources.yaml --ignore-not-found && kubectl apply -f ~/backups/phoenix/phoenix_backup_*_k8s_resources.yaml
 ```
 
 ---
@@ -482,7 +482,7 @@ kubectl delete -f ~/backups/openclaw/openclaw_backup_*_k8s_resources.yaml --igno
 
 **🎉 Félicitations ! Tu as terminé la Partie 3 : Sécuriser**
 
-Ton installation OpenClaw est maintenant :
+Ton installation Phoenix est maintenant :
 - ✅ Isolée dans des containers
 - ✅ Protégée par un proxy whitelist
 - ✅ Sécurisée avec Network Policies

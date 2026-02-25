@@ -2,15 +2,15 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas implémenter des Network Policies Kubernetes qui contrôlent strictement tous les flux réseau vers et depuis OpenClaw. C'est la couche de défense réseau de ton architecture Zero Trust.
+Dans ce chapitre, tu vas implémenter des Network Policies Kubernetes qui contrôlent strictement tous les flux réseau vers et depuis Phoenix. C'est la couche de défense réseau de ton architecture Zero Trust.
 
 - **Pourquoi les Network Policies ?** Par défaut, tous les Pods Kubernetes peuvent communiquer entre eux. C'est dangereux : un Pod compromis pourrait attaquer d'autres services.
 - **Approche Deny-All + Whitelist** : On bloque TOUT par défaut, puis on autorise explicitement uniquement les flux nécessaires.
-- **Microsegmentation** : Chaque composant (OpenClaw, Squid, LLM) a ses propres règles réseau.
+- **Microsegmentation** : Chaque composant (Phoenix, Squid, LLM) a ses propres règles réseau.
 
 ## 🛠️ Prérequis
 
-- Namespace `openclaw-sandbox` avec Pods configurés (Chapitres 1-3)
+- Namespace `phoenix-sandbox` avec Pods configurés (Chapitres 1-3)
 - Proxy Squid déployé et fonctionnel
 - Un CNI qui supporte les Network Policies (Calico, Cilium, ou autre)
 
@@ -59,7 +59,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-all
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   podSelector: {}  # S'applique à TOUS les pods du namespace
   policyTypes:
@@ -76,7 +76,7 @@ kubectl apply -f /tmp/network-policy-deny-all.yaml
 **Vérification :**
 
 ```bash
-kubectl get networkpolicy default-deny-all -n openclaw-sandbox && kubectl describe networkpolicy default-deny-all -n openclaw-sandbox
+kubectl get networkpolicy default-deny-all -n phoenix-sandbox && kubectl describe networkpolicy default-deny-all -n phoenix-sandbox
 ```
 
 ### Étape 3 : Autoriser le trafic DNS
@@ -91,7 +91,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   podSelector: {}  # S'applique à tous les pods
   policyTypes:
@@ -119,26 +119,26 @@ kubectl apply -f /tmp/network-policy-allow-dns.yaml
 **Vérification :**
 
 ```bash
-kubectl get networkpolicy allow-dns -n openclaw-sandbox -o yaml | grep -A20 "egress"
+kubectl get networkpolicy allow-dns -n phoenix-sandbox -o yaml | grep -A20 "egress"
 ```
 
-### Étape 4 : Configurer les règles pour OpenClaw
+### Étape 4 : Configurer les règles pour Phoenix
 
-**Pourquoi ?** OpenClaw doit pouvoir communiquer avec le proxy Squid et le service LLM local (hors Docker). On définit précisément ces flux.
+**Pourquoi ?** Phoenix doit pouvoir communiquer avec le proxy Squid et le service LLM local (hors Docker). On définit précisément ces flux.
 
 **Comment ?**
 
 ```bash
-cat << 'EOF' > /tmp/network-policy-openclaw.yaml
+cat << 'EOF' > /tmp/network-policy-phoenix.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: openclaw-network-policy
-  namespace: openclaw-sandbox
+  name: phoenix-network-policy
+  namespace: phoenix-sandbox
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
   - Ingress
   - Egress
@@ -148,7 +148,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app: openclaw-api
+          app: phoenix-api
     ports:
     - protocol: TCP
       port: 8080
@@ -178,7 +178,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          app: openclaw-api
+          app: phoenix-api
     ports:
     - protocol: TCP
       port: 8080
@@ -186,18 +186,18 @@ EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/network-policy-openclaw.yaml
+kubectl apply -f /tmp/network-policy-phoenix.yaml
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get networkpolicy openclaw-network-policy -n openclaw-sandbox && kubectl describe networkpolicy openclaw-network-policy -n openclaw-sandbox | grep -A30 "Spec"
+kubectl get networkpolicy phoenix-network-policy -n phoenix-sandbox && kubectl describe networkpolicy phoenix-network-policy -n phoenix-sandbox | grep -A30 "Spec"
 ```
 
 ### Étape 5 : Configurer les règles pour Squid Proxy
 
-**Pourquoi ?** Squid est le seul point de sortie vers Internet. Il doit accepter les connexions d'OpenClaw et pouvoir accéder aux domaines whitelistés.
+**Pourquoi ?** Squid est le seul point de sortie vers Internet. Il doit accepter les connexions d'Phoenix et pouvoir accéder aux domaines whitelistés.
 
 **Comment ?**
 
@@ -207,7 +207,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: squid-proxy-network-policy
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   podSelector:
     matchLabels:
@@ -217,11 +217,11 @@ spec:
   - Egress
 
   ingress:
-  # Accepter les connexions depuis OpenClaw uniquement
+  # Accepter les connexions depuis Phoenix uniquement
   - from:
     - podSelector:
         matchLabels:
-          app: openclaw
+          app: phoenix
     ports:
     - protocol: TCP
       port: 3128
@@ -252,16 +252,16 @@ kubectl apply -f /tmp/network-policy-squid.yaml
 **Vérification :**
 
 ```bash
-kubectl get networkpolicy squid-proxy-network-policy -n openclaw-sandbox && kubectl describe networkpolicy squid-proxy-network-policy -n openclaw-sandbox | grep -A50 "Spec"
+kubectl get networkpolicy squid-proxy-network-policy -n phoenix-sandbox && kubectl describe networkpolicy squid-proxy-network-policy -n phoenix-sandbox | grep -A50 "Spec"
 ```
 
 ### Étape 6 : Bloquer l'accès direct au Mac depuis les containers
 
-**Pourquoi ?** C'est une règle CRITIQUE : OpenClaw ne doit JAMAIS pouvoir accéder directement aux ressources du Mac (fichiers, services, SSH). Seul le LLM local est accessible via des ports spécifiques.
+**Pourquoi ?** C'est une règle CRITIQUE : Phoenix ne doit JAMAIS pouvoir accéder directement aux ressources du Mac (fichiers, services, SSH). Seul le LLM local est accessible via des ports spécifiques.
 
 **Comment ?**
 
-La politique `openclaw-network-policy` autorise déjà uniquement les ports LLM. Ajoutons une politique explicite de blocage pour plus de clarté :
+La politique `phoenix-network-policy` autorise déjà uniquement les ports LLM. Ajoutons une politique explicite de blocage pour plus de clarté :
 
 ```bash
 cat << 'EOF' > /tmp/network-policy-block-host.yaml
@@ -269,13 +269,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: block-direct-host-access
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
   annotations:
     description: "Bloque l'accès direct au Mac sauf ports LLM explicitement autorisés"
 spec:
   podSelector:
     matchLabels:
-      app: openclaw
+      app: phoenix
   policyTypes:
   - Egress
   egress:
@@ -307,7 +307,7 @@ kubectl apply -f /tmp/network-policy-block-host.yaml
 **Vérification :**
 
 ```bash
-kubectl get networkpolicy block-direct-host-access -n openclaw-sandbox && echo "Ports autorisés vers le Mac: 11434 (Ollama), 8000 (API LLM)"
+kubectl get networkpolicy block-direct-host-access -n phoenix-sandbox && echo "Ports autorisés vers le Mac: 11434 (Ollama), 8000 (API LLM)"
 ```
 
 ### Étape 7 : Tester les Network Policies
@@ -324,9 +324,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: test-netpol
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
   labels:
-    app: openclaw  # Simule OpenClaw pour tester les politiques
+    app: phoenix  # Simule Phoenix pour tester les politiques
 spec:
   securityContext:
     runAsNonRoot: true
@@ -348,40 +348,40 @@ EOF
 ```
 
 ```bash
-kubectl apply -f /tmp/test-network-policy.yaml && sleep 10 && kubectl get pod test-netpol -n openclaw-sandbox
+kubectl apply -f /tmp/test-network-policy.yaml && sleep 10 && kubectl get pod test-netpol -n phoenix-sandbox
 ```
 
 **Tests de connectivité :**
 
 Test 1 - DNS (doit fonctionner) :
 ```bash
-kubectl exec test-netpol -n openclaw-sandbox -- nslookup google.com 2>&1 | head -5
+kubectl exec test-netpol -n phoenix-sandbox -- nslookup google.com 2>&1 | head -5
 ```
 
 Test 2 - Proxy Squid (doit fonctionner) :
 ```bash
-kubectl exec test-netpol -n openclaw-sandbox -- nc -zv squid-proxy 3128 2>&1 || echo "Connexion Squid OK ou timeout attendu"
+kubectl exec test-netpol -n phoenix-sandbox -- nc -zv squid-proxy 3128 2>&1 || echo "Connexion Squid OK ou timeout attendu"
 ```
 
 Test 3 - Internet direct (doit être BLOQUÉ) :
 ```bash
-kubectl exec test-netpol -n openclaw-sandbox -- timeout 5 nc -zv google.com 443 2>&1 && echo "ERREUR: Internet direct accessible!" || echo "OK: Internet direct bloqué"
+kubectl exec test-netpol -n phoenix-sandbox -- timeout 5 nc -zv google.com 443 2>&1 && echo "ERREUR: Internet direct accessible!" || echo "OK: Internet direct bloqué"
 ```
 
 Test 4 - SSH vers le Mac (doit être BLOQUÉ) :
 ```bash
-kubectl exec test-netpol -n openclaw-sandbox -- timeout 5 nc -zv 192.168.1.1 22 2>&1 && echo "ERREUR: SSH accessible!" || echo "OK: SSH bloqué"
+kubectl exec test-netpol -n phoenix-sandbox -- timeout 5 nc -zv 192.168.1.1 22 2>&1 && echo "ERREUR: SSH accessible!" || echo "OK: SSH bloqué"
 ```
 
 Nettoie le Pod de test :
 ```bash
-kubectl delete pod test-netpol -n openclaw-sandbox --grace-period=0 --force 2>/dev/null || true
+kubectl delete pod test-netpol -n phoenix-sandbox --grace-period=0 --force 2>/dev/null || true
 ```
 
 **Vérification :**
 
 ```bash
-echo "=== Résumé des Network Policies ===" && kubectl get networkpolicy -n openclaw-sandbox
+echo "=== Résumé des Network Policies ===" && kubectl get networkpolicy -n phoenix-sandbox
 ```
 
 ### Étape 8 : Documenter les flux réseau autorisés
@@ -398,16 +398,16 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: network-flows-documentation
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
   labels:
     documentation: network-security
 data:
   flows.md: |
-    # Flux Réseau Autorisés - OpenClaw Sandbox
+    # Flux Réseau Autorisés - Phoenix Sandbox
 
     ## Architecture Réseau
     ```
-    [OpenClaw Pod] ---> [Squid Proxy] ---> [Internet Whitelisté]
+    [Phoenix Pod] ---> [Squid Proxy] ---> [Internet Whitelisté]
          |
          +---> [LLM Local sur Mac:11434/8000]
     ```
@@ -416,10 +416,10 @@ data:
 
     | Source | Destination | Port | Protocole | Description |
     |--------|-------------|------|-----------|-------------|
-    | openclaw | squid-proxy | 3128 | TCP | Proxy HTTP/HTTPS |
-    | openclaw | Mac (192.168.x.x) | 11434 | TCP | Ollama API |
-    | openclaw | Mac (192.168.x.x) | 8000 | TCP | API LLM custom |
-    | openclaw | kube-dns | 53 | UDP/TCP | Résolution DNS |
+    | phoenix | squid-proxy | 3128 | TCP | Proxy HTTP/HTTPS |
+    | phoenix | Mac (192.168.x.x) | 11434 | TCP | Ollama API |
+    | phoenix | Mac (192.168.x.x) | 8000 | TCP | API LLM custom |
+    | phoenix | kube-dns | 53 | UDP/TCP | Résolution DNS |
     | squid-proxy | Internet | 443 | TCP | HTTPS sortant |
     | squid-proxy | Internet | 80 | TCP | HTTP sortant |
 
@@ -427,10 +427,10 @@ data:
 
     | Source | Destination | Port | Raison |
     |--------|-------------|------|--------|
-    | openclaw | Internet direct | * | Doit passer par Squid |
-    | openclaw | Mac | 22 | SSH interdit |
-    | openclaw | Mac | * | Tous ports sauf LLM |
-    | openclaw | Autres namespaces | * | Isolation namespace |
+    | phoenix | Internet direct | * | Doit passer par Squid |
+    | phoenix | Mac | 22 | SSH interdit |
+    | phoenix | Mac | * | Tous ports sauf LLM |
+    | phoenix | Autres namespaces | * | Isolation namespace |
     | squid-proxy | Réseaux privés | * | Pas d'accès interne |
 
     ## Dernière mise à jour
@@ -446,7 +446,7 @@ kubectl apply -f /tmp/network-flows-doc.yaml
 **Vérification :**
 
 ```bash
-kubectl get configmap network-flows-documentation -n openclaw-sandbox -o jsonpath='{.data.flows\.md}' | head -30
+kubectl get configmap network-flows-documentation -n phoenix-sandbox -o jsonpath='{.data.flows\.md}' | head -30
 ```
 
 ## ✅ Checklist
@@ -456,14 +456,14 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] CNI supporte les Network Policies (Calico, Cilium, etc.)
 - [ ] Politique `default-deny-all` appliquée
 - [ ] DNS autorisé vers kube-system
-- [ ] OpenClaw peut accéder à Squid (port 3128)
-- [ ] OpenClaw peut accéder au LLM local (ports 11434, 8000)
-- [ ] OpenClaw NE PEUT PAS accéder à Internet directement
-- [ ] OpenClaw NE PEUT PAS accéder au SSH du Mac (port 22)
+- [ ] Phoenix peut accéder à Squid (port 3128)
+- [ ] Phoenix peut accéder au LLM local (ports 11434, 8000)
+- [ ] Phoenix NE PEUT PAS accéder à Internet directement
+- [ ] Phoenix NE PEUT PAS accéder au SSH du Mac (port 22)
 - [ ] Documentation des flux créée
 
 ```bash
-echo "=== Vérification Network Policies ===" && kubectl get networkpolicy -n openclaw-sandbox && echo "" && echo "Nombre de policies: $(kubectl get networkpolicy -n openclaw-sandbox --no-headers | wc -l)" && echo "=== Network OK ==="
+echo "=== Vérification Network Policies ===" && kubectl get networkpolicy -n phoenix-sandbox && echo "" && echo "Nombre de policies: $(kubectl get networkpolicy -n phoenix-sandbox --no-headers | wc -l)" && echo "=== Network OK ==="
 ```
 
 ## ⚠️ Dépannage
@@ -485,17 +485,17 @@ kubectl get pods -n kube-system | grep -E "calico|cilium" || echo "Installer un 
 **Solution** :
 
 ```bash
-kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide && kubectl get networkpolicy allow-dns -n openclaw-sandbox -o yaml
+kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide && kubectl get networkpolicy allow-dns -n phoenix-sandbox -o yaml
 ```
 
 ### Erreur : "Connection to Squid refused"
 
-**Cause** : La politique OpenClaw ou Squid bloque le trafic.
+**Cause** : La politique Phoenix ou Squid bloque le trafic.
 
 **Solution** :
 
 ```bash
-kubectl describe networkpolicy openclaw-network-policy -n openclaw-sandbox | grep -A10 "squid"
+kubectl describe networkpolicy phoenix-network-policy -n phoenix-sandbox | grep -A10 "squid"
 ```
 
 ### Le traffic vers Internet fonctionne sans proxy
@@ -505,7 +505,7 @@ kubectl describe networkpolicy openclaw-network-policy -n openclaw-sandbox | gre
 **Solution** :
 
 ```bash
-kubectl get networkpolicy default-deny-all -n openclaw-sandbox && kubectl describe networkpolicy default-deny-all -n openclaw-sandbox
+kubectl get networkpolicy default-deny-all -n phoenix-sandbox && kubectl describe networkpolicy default-deny-all -n phoenix-sandbox
 ```
 
 ### Je ne peux plus accéder aux Pods pour debug
@@ -515,7 +515,7 @@ kubectl get networkpolicy default-deny-all -n openclaw-sandbox && kubectl descri
 **Solution** : Crée une politique temporaire pour le debug :
 
 ```bash
-kubectl label pod <nom-pod> -n openclaw-sandbox debug=true --overwrite
+kubectl label pod <nom-pod> -n phoenix-sandbox debug=true --overwrite
 ```
 
 Puis crée une politique autorisant le trafic pour les Pods labellés `debug=true`.

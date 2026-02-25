@@ -3,10 +3,10 @@
 ## A
 
 ### Agent
-Programme autonome qui exécute des tâches pour le compte de l'utilisateur. Dans OpenClaw, l'agent est le "cerveau" qui répond aux messages.
+Programme autonome qui exécute des tâches pour le compte de l'utilisateur. Dans Phoenix, l'agent est le "cerveau" qui répond aux messages.
 
 ### API (Application Programming Interface)
-Interface qui permet à deux programmes de communiquer. Exemple : l'API d'Anthropic permet à OpenClaw d'utiliser Claude.
+Interface qui permet à deux programmes de communiquer. Exemple : l'API d'Anthropic permet à Phoenix d'utiliser Claude.
 
 ### ARIA (Accessible Rich Internet Applications)
 Standard qui améliore l'accessibilité des applications web pour les lecteurs d'écran.
@@ -26,7 +26,7 @@ Réseau virtuel qui connecte plusieurs containers entre eux tout en les isolant 
 ## C
 
 ### Channel (canal)
-Dans OpenClaw, un canal est une plateforme de messagerie (WhatsApp, Telegram, Discord, etc.).
+Dans Phoenix, un canal est une plateforme de messagerie (WhatsApp, Telegram, Discord, etc.).
 
 ### CI/CD (Continuous Integration/Continuous Deployment)
 Pratique d'automatisation qui teste et déploie le code automatiquement à chaque modification.
@@ -105,7 +105,7 @@ Standard d'authentification sans mot de passe utilisant des clés de sécurité.
 ## G
 
 ### Gateway
-Point d'entrée central qui route les requêtes. Dans OpenClaw, le Gateway gère tous les canaux.
+Point d'entrée central qui route les requêtes. Dans Phoenix, le Gateway gère tous les canaux.
 
 ### GPU (Graphics Processing Unit)
 Processeur graphique, utilisé pour accélérer les calculs IA.
@@ -229,7 +229,7 @@ Outil pour faire tourner des LLM en local via la ligne de commande.
 ### OOP (Object-Oriented Programming)
 Programmation orientée objet : organiser le code en classes et objets.
 
-### OpenClaw
+### Phoenix
 Assistant IA personnel open source. Anciennement Clawdbot/MoltBot.
 
 ### ORCID
@@ -243,7 +243,7 @@ Organisation qui publie des guides de sécurité web. Le "Top 10" liste les 10 v
 ## P
 
 ### Pairing
-Dans OpenClaw, processus d'approbation d'un nouvel utilisateur.
+Dans Phoenix, processus d'approbation d'un nouvel utilisateur.
 
 ### PersistentVolume (PV)
 Stockage persistant dans Kubernetes.
@@ -255,7 +255,7 @@ Demande de stockage par un pod Kubernetes.
 Plus petite unité déployable dans Kubernetes. Contient un ou plusieurs containers.
 
 ### Port
-Numéro (0-65535) qui identifie un service sur une machine. Exemples : 80 (HTTP), 443 (HTTPS), 18789 (OpenClaw).
+Numéro (0-65535) qui identifie un service sur une machine. Exemples : 80 (HTTP), 443 (HTTPS), 18789 (Phoenix).
 
 ### Prometheus
 Système de monitoring et d'alerting pour Kubernetes.
@@ -309,7 +309,7 @@ Ressource pour stocker des données sensibles (mots de passe, clés API).
 Abstraction qui expose un groupe de pods via une IP stable.
 
 ### Skill
-Dans OpenClaw, un plugin qui ajoute des capacités (recherche web, lecture de fichiers, etc.).
+Dans Phoenix, un plugin qui ajoute des capacités (recherche web, lecture de fichiers, etc.).
 
 ### SOLID
 5 principes de conception logicielle : Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion.

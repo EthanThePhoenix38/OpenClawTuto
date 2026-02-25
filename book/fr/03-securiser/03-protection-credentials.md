@@ -2,23 +2,23 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas sécuriser tous les secrets (API keys, tokens, mots de passe) utilisés par OpenClaw. Les credentials mal protégés sont la cause principale des compromissions de sécurité.
+Dans ce chapitre, tu vas sécuriser tous les secrets (API keys, tokens, mots de passe) utilisés par Phoenix. Les credentials mal protégés sont la cause principale des compromissions de sécurité.
 
 - **Pourquoi protéger les secrets ?** Un token API exposé peut donner accès à des ressources cloud, des données sensibles, ou permettre des actions non autorisées au nom de l'utilisateur.
-- **Principe du moindre privilège** : OpenClaw ne doit accéder qu'aux secrets strictement nécessaires, avec des permissions minimales.
+- **Principe du moindre privilège** : Phoenix ne doit accéder qu'aux secrets strictement nécessaires, avec des permissions minimales.
 - **Defense in Depth** : Chiffrement au repos, en transit, et contrôle d'accès strict.
 
 ## 🛠️ Prérequis
 
-- Namespace `openclaw-sandbox` configuré (Chapitre 1)
+- Namespace `phoenix-sandbox` configuré (Chapitre 1)
 - Proxy Squid opérationnel (Chapitre 2)
 - Compréhension des Secrets Kubernetes
 
 ## 📝 Étapes détaillées
 
-### Étape 1 : Comprendre les types de secrets OpenClaw
+### Étape 1 : Comprendre les types de secrets Phoenix
 
-**Pourquoi ?** Avant de sécuriser, il faut identifier et classifier tous les secrets utilisés par OpenClaw.
+**Pourquoi ?** Avant de sécuriser, il faut identifier et classifier tous les secrets utilisés par Phoenix.
 
 **Comment ?**
 
@@ -32,14 +32,14 @@ Classification des secrets par criticité :
 | Clés de chiffrement | CRITIQUE | Protection données | 365 jours |
 | Tokens webhook | MOYENNE | Intégrations | 90 jours |
 
-**Règle d'or** : Les secrets CRITIQUES ne doivent JAMAIS être accessibles directement par OpenClaw. Utilise un service intermédiaire.
+**Règle d'or** : Les secrets CRITIQUES ne doivent JAMAIS être accessibles directement par Phoenix. Utilise un service intermédiaire.
 
 **Vérification :**
 
 Liste les secrets existants dans le namespace :
 
 ```bash
-kubectl get secrets -n openclaw-sandbox 2>/dev/null || echo "Namespace prêt pour les secrets"
+kubectl get secrets -n phoenix-sandbox 2>/dev/null || echo "Namespace prêt pour les secrets"
 ```
 
 ### Étape 2 : Créer les Secrets Kubernetes chiffrés
@@ -57,14 +57,14 @@ kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath='{.items
 Crée le Secret pour l'API LLM (remplace les valeurs par des placeholders) :
 
 ```bash
-cat << 'EOF' > /tmp/openclaw-secrets.yaml
+cat << 'EOF' > /tmp/phoenix-secrets.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: openclaw-llm-credentials
-  namespace: openclaw-sandbox
+  name: phoenix-llm-credentials
+  namespace: phoenix-sandbox
   labels:
-    app: openclaw
+    app: phoenix
     secret-type: llm-api
     rotation-period: "90d"
 type: Opaque
@@ -81,10 +81,10 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: openclaw-github-token
-  namespace: openclaw-sandbox
+  name: phoenix-github-token
+  namespace: phoenix-sandbox
   labels:
-    app: openclaw
+    app: phoenix
     secret-type: github
     rotation-period: "30d"
 type: Opaque
@@ -96,10 +96,10 @@ stringData:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: openclaw-internal-keys
-  namespace: openclaw-sandbox
+  name: phoenix-internal-keys
+  namespace: phoenix-sandbox
   labels:
-    app: openclaw
+    app: phoenix
     secret-type: internal
     rotation-period: "365d"
 type: Opaque
@@ -116,13 +116,13 @@ EOF
 Méthode sécurisée pour créer les secrets (sans fichier YAML avec les valeurs) :
 
 ```bash
-kubectl create secret generic openclaw-llm-credentials -n openclaw-sandbox --from-literal=ANTHROPIC_API_KEY="VOTRE-VRAIE-CLE" --from-literal=LLM_PROVIDER="anthropic" --from-literal=LLM_MODEL="claude-3-opus-20240229" --from-literal=LLM_MAX_TOKENS="4096" --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic phoenix-llm-credentials -n phoenix-sandbox --from-literal=ANTHROPIC_API_KEY="VOTRE-VRAIE-CLE" --from-literal=LLM_PROVIDER="anthropic" --from-literal=LLM_MODEL="claude-3-opus-20240229" --from-literal=LLM_MAX_TOKENS="4096" --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 **Vérification :**
 
 ```bash
-kubectl get secrets -n openclaw-sandbox -l app=openclaw && kubectl get secret openclaw-llm-credentials -n openclaw-sandbox -o jsonpath='{.data}' | jq -r 'keys[]'
+kubectl get secrets -n phoenix-sandbox -l app=phoenix && kubectl get secret phoenix-llm-credentials -n phoenix-sandbox -o jsonpath='{.data}' | jq -r 'keys[]'
 ```
 
 ### Étape 3 : Configurer RBAC pour l'accès aux secrets
@@ -136,31 +136,31 @@ cat << 'EOF' > /tmp/secret-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: openclaw-secret-reader
-  namespace: openclaw-sandbox
+  name: phoenix-secret-reader
+  namespace: phoenix-sandbox
 rules:
 # Accès en lecture UNIQUEMENT aux secrets spécifiques
 - apiGroups: [""]
   resources: ["secrets"]
   resourceNames:
-    - "openclaw-llm-credentials"
-    - "openclaw-internal-keys"
+    - "phoenix-llm-credentials"
+    - "phoenix-internal-keys"
   verbs: ["get"]
-# PAS d'accès à openclaw-github-token depuis OpenClaw directement
+# PAS d'accès à phoenix-github-token depuis Phoenix directement
 # Le token GitHub est utilisé par un service intermédiaire
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: openclaw-secret-reader-binding
-  namespace: openclaw-sandbox
+  name: phoenix-secret-reader-binding
+  namespace: phoenix-sandbox
 subjects:
 - kind: ServiceAccount
-  name: openclaw-restricted
-  namespace: openclaw-sandbox
+  name: phoenix-restricted
+  namespace: phoenix-sandbox
 roleRef:
   kind: Role
-  name: openclaw-secret-reader
+  name: phoenix-secret-reader
   apiGroup: rbac.authorization.k8s.io
 EOF
 ```
@@ -172,28 +172,28 @@ kubectl apply -f /tmp/secret-rbac.yaml
 **Vérification :**
 
 ```bash
-kubectl auth can-i get secrets/openclaw-llm-credentials -n openclaw-sandbox --as=system:serviceaccount:openclaw-sandbox:openclaw-restricted && kubectl auth can-i get secrets/openclaw-github-token -n openclaw-sandbox --as=system:serviceaccount:openclaw-sandbox:openclaw-restricted
+kubectl auth can-i get secrets/phoenix-llm-credentials -n phoenix-sandbox --as=system:serviceaccount:phoenix-sandbox:phoenix-restricted && kubectl auth can-i get secrets/phoenix-github-token -n phoenix-sandbox --as=system:serviceaccount:phoenix-sandbox:phoenix-restricted
 ```
 
 La première commande doit retourner `yes`, la seconde `no`.
 
-### Étape 4 : Monter les secrets dans le Pod OpenClaw
+### Étape 4 : Monter les secrets dans le Pod Phoenix
 
 **Pourquoi ?** Il y a deux méthodes pour exposer les secrets : variables d'environnement ou fichiers. Les fichiers sont plus sécurisés car ils ne sont pas visibles dans les logs de processus.
 
 **Comment ?**
 
-Mise à jour du Pod OpenClaw pour utiliser les secrets :
+Mise à jour du Pod Phoenix pour utiliser les secrets :
 
 ```bash
-cat << 'EOF' > /tmp/openclaw-pod-with-secrets.yaml
+cat << 'EOF' > /tmp/phoenix-pod-with-secrets.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: openclaw-agent
-  namespace: openclaw-sandbox
+  name: phoenix-agent
+  namespace: phoenix-sandbox
   labels:
-    app: openclaw
+    app: phoenix
 spec:
   securityContext:
     runAsNonRoot: true
@@ -203,8 +203,8 @@ spec:
     seccompProfile:
       type: RuntimeDefault
   containers:
-  - name: openclaw
-    image: openclaw:latest
+  - name: phoenix
+    image: phoenix:latest
     imagePullPolicy: IfNotPresent
     securityContext:
       allowPrivilegeEscalation: false
@@ -217,22 +217,22 @@ spec:
     - name: LLM_PROVIDER
       valueFrom:
         secretKeyRef:
-          name: openclaw-llm-credentials
+          name: phoenix-llm-credentials
           key: LLM_PROVIDER
     - name: LLM_MODEL
       valueFrom:
         secretKeyRef:
-          name: openclaw-llm-credentials
+          name: phoenix-llm-credentials
           key: LLM_MODEL
     - name: LLM_MAX_TOKENS
       valueFrom:
         secretKeyRef:
-          name: openclaw-llm-credentials
+          name: phoenix-llm-credentials
           key: LLM_MAX_TOKENS
     # Proxy configuration
     envFrom:
     - configMapRef:
-        name: openclaw-env
+        name: phoenix-env
     volumeMounts:
     # Secrets montés en fichiers (plus sécurisé)
     - name: llm-credentials
@@ -260,14 +260,14 @@ spec:
   # Secrets en tant que fichiers
   - name: llm-credentials
     secret:
-      secretName: openclaw-llm-credentials
+      secretName: phoenix-llm-credentials
       items:
       - key: ANTHROPIC_API_KEY
         path: api_key
         mode: 0400
   - name: internal-keys
     secret:
-      secretName: openclaw-internal-keys
+      secretName: phoenix-internal-keys
       defaultMode: 0400
   # Volumes de travail
   - name: tmp-volume
@@ -278,8 +278,8 @@ spec:
       sizeLimit: 1Gi
   - name: config
     configMap:
-      name: openclaw-config
-  serviceAccountName: openclaw-restricted
+      name: phoenix-config
+  serviceAccountName: phoenix-restricted
   automountServiceAccountToken: false
 EOF
 ```
@@ -287,7 +287,7 @@ EOF
 **Vérification :**
 
 ```bash
-kubectl apply --dry-run=client -f /tmp/openclaw-pod-with-secrets.yaml && echo "Configuration valide"
+kubectl apply --dry-run=client -f /tmp/phoenix-pod-with-secrets.yaml && echo "Configuration valide"
 ```
 
 ### Étape 5 : Implémenter la rotation automatique des secrets
@@ -304,7 +304,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: secret-rotation-checker
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 spec:
   schedule: "0 9 * * 1"  # Tous les lundis à 9h
   jobTemplate:
@@ -331,7 +331,7 @@ spec:
             - -c
             - |
               echo "=== Vérification de l'âge des secrets ==="
-              SECRETS=$(kubectl get secrets -n openclaw-sandbox -l app=openclaw -o jsonpath='{range .items[*]}{.metadata.name},{.metadata.creationTimestamp},{.metadata.labels.rotation-period}{"\n"}{end}')
+              SECRETS=$(kubectl get secrets -n phoenix-sandbox -l app=phoenix -o jsonpath='{range .items[*]}{.metadata.name},{.metadata.creationTimestamp},{.metadata.labels.rotation-period}{"\n"}{end}')
               echo "$SECRETS" | while IFS=',' read -r name created rotation; do
                 if [ -n "$name" ]; then
                   created_ts=$(date -d "$created" +%s 2>/dev/null || echo "0")
@@ -358,13 +358,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: secret-checker
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: secret-checker-role
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
@@ -374,11 +374,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: secret-checker-binding
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 subjects:
 - kind: ServiceAccount
   name: secret-checker
-  namespace: openclaw-sandbox
+  namespace: phoenix-sandbox
 roleRef:
   kind: Role
   name: secret-checker-role
@@ -393,12 +393,12 @@ kubectl apply -f /tmp/secret-checker-sa.yaml && kubectl apply -f /tmp/secret-rot
 **Vérification :**
 
 ```bash
-kubectl get cronjob secret-rotation-checker -n openclaw-sandbox
+kubectl get cronjob secret-rotation-checker -n phoenix-sandbox
 ```
 
 ### Étape 6 : Protéger les secrets sensibles du Mac
 
-**Pourquoi ?** Certains secrets du Mac (clés SSH, tokens système) ne doivent JAMAIS être accessibles depuis OpenClaw, même indirectement.
+**Pourquoi ?** Certains secrets du Mac (clés SSH, tokens système) ne doivent JAMAIS être accessibles depuis Phoenix, même indirectement.
 
 **Comment ?**
 
@@ -409,10 +409,10 @@ cat << 'EOF' > /tmp/verify-no-sensitive-mounts.sh
 #!/bin/bash
 echo "=== Vérification des montages sensibles ==="
 SENSITIVE_PATHS="/.ssh /etc/passwd /etc/shadow /.aws /.kube /.gnupg /.netrc"
-PODS=$(kubectl get pods -n openclaw-sandbox -o jsonpath='{.items[*].metadata.name}')
+PODS=$(kubectl get pods -n phoenix-sandbox -o jsonpath='{.items[*].metadata.name}')
 for pod in $PODS; do
   echo "Vérification du pod: $pod"
-  MOUNTS=$(kubectl get pod $pod -n openclaw-sandbox -o jsonpath='{.spec.volumes[*].hostPath.path}' 2>/dev/null)
+  MOUNTS=$(kubectl get pod $pod -n phoenix-sandbox -o jsonpath='{.spec.volumes[*].hostPath.path}' 2>/dev/null)
   for sensitive in $SENSITIVE_PATHS; do
     if echo "$MOUNTS" | grep -q "$sensitive"; then
       echo "ALERTE CRITIQUE: $pod monte $sensitive !"
@@ -429,7 +429,7 @@ chmod +x /tmp/verify-no-sensitive-mounts.sh && /tmp/verify-no-sensitive-mounts.s
 **Vérification :**
 
 ```bash
-kubectl get pods -n openclaw-sandbox -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.volumes[*].name}{"\n"}{end}'
+kubectl get pods -n phoenix-sandbox -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.volumes[*].name}{"\n"}{end}'
 ```
 
 ### Étape 7 : Auditer l'accès aux secrets
@@ -445,16 +445,16 @@ cat << 'EOF' > /tmp/audit-policy.yaml
 apiVersion: audit.k8s.io/v1
 kind: Policy
 rules:
-# Audit tous les accès aux secrets dans openclaw-sandbox
+# Audit tous les accès aux secrets dans phoenix-sandbox
 - level: RequestResponse
-  namespaces: ["openclaw-sandbox"]
+  namespaces: ["phoenix-sandbox"]
   resources:
   - group: ""
     resources: ["secrets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 # Audit les tentatives d'accès refusées
 - level: Metadata
-  namespaces: ["openclaw-sandbox"]
+  namespaces: ["phoenix-sandbox"]
   omitStages:
   - RequestReceived
 EOF
@@ -467,7 +467,7 @@ Pour les clusters locaux (kind, minikube), l'audit peut ne pas être activé par
 Simule un accès et vérifie les logs :
 
 ```bash
-kubectl get secret openclaw-llm-credentials -n openclaw-sandbox -o jsonpath='{.metadata.name}' && echo " - Accès réussi (vérifier les logs d'audit)"
+kubectl get secret phoenix-llm-credentials -n phoenix-sandbox -o jsonpath='{.metadata.name}' && echo " - Accès réussi (vérifier les logs d'audit)"
 ```
 
 ## ✅ Checklist
@@ -479,10 +479,10 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] Secrets montés en fichiers (pas en variables d'environnement pour les clés API)
 - [ ] CronJob de vérification de rotation configuré
 - [ ] Aucun chemin sensible du Mac n'est monté dans les Pods
-- [ ] ServiceAccount OpenClaw ne peut PAS accéder au token GitHub directement
+- [ ] ServiceAccount Phoenix ne peut PAS accéder au token GitHub directement
 
 ```bash
-echo "=== Vérification Secrets ===" && kubectl get secrets -n openclaw-sandbox -l app=openclaw && kubectl get role,rolebinding -n openclaw-sandbox | grep secret && kubectl auth can-i get secrets/openclaw-github-token -n openclaw-sandbox --as=system:serviceaccount:openclaw-sandbox:openclaw-restricted && echo "=== Secrets OK ==="
+echo "=== Vérification Secrets ===" && kubectl get secrets -n phoenix-sandbox -l app=phoenix && kubectl get role,rolebinding -n phoenix-sandbox | grep secret && kubectl auth can-i get secrets/phoenix-github-token -n phoenix-sandbox --as=system:serviceaccount:phoenix-sandbox:phoenix-restricted && echo "=== Secrets OK ==="
 ```
 
 ## ⚠️ Dépannage
@@ -494,7 +494,7 @@ echo "=== Vérification Secrets ===" && kubectl get secrets -n openclaw-sandbox 
 **Solution** :
 
 ```bash
-kubectl describe rolebinding -n openclaw-sandbox | grep -A5 "openclaw-restricted"
+kubectl describe rolebinding -n phoenix-sandbox | grep -A5 "phoenix-restricted"
 ```
 
 ### Erreur : "secret not found" dans le Pod
@@ -504,7 +504,7 @@ kubectl describe rolebinding -n openclaw-sandbox | grep -A5 "openclaw-restricted
 **Solution** :
 
 ```bash
-kubectl get secret <nom-secret> -n openclaw-sandbox -o jsonpath='{.data}' | jq 'keys'
+kubectl get secret <nom-secret> -n phoenix-sandbox -o jsonpath='{.data}' | jq 'keys'
 ```
 
 ### Les secrets apparaissent dans les logs
@@ -520,7 +520,7 @@ kubectl get secret <nom-secret> -n openclaw-sandbox -o jsonpath='{.data}' | jq '
 **Solution** :
 
 ```bash
-kubectl describe cronjob secret-rotation-checker -n openclaw-sandbox && kubectl get events -n openclaw-sandbox --field-selector involvedObject.name=secret-rotation-checker
+kubectl describe cronjob secret-rotation-checker -n phoenix-sandbox && kubectl get events -n phoenix-sandbox --field-selector involvedObject.name=secret-rotation-checker
 ```
 
 ### Un secret a été compromis
@@ -528,9 +528,9 @@ kubectl describe cronjob secret-rotation-checker -n openclaw-sandbox && kubectl 
 **Procédure d'urgence** :
 
 1. Révoquer immédiatement le secret côté fournisseur (API provider, GitHub, etc.)
-2. Supprimer le secret Kubernetes : `kubectl delete secret <nom> -n openclaw-sandbox`
+2. Supprimer le secret Kubernetes : `kubectl delete secret <nom> -n phoenix-sandbox`
 3. Créer un nouveau secret avec une nouvelle valeur
-4. Redémarrer les Pods : `kubectl rollout restart deployment -n openclaw-sandbox`
+4. Redémarrer les Pods : `kubectl rollout restart deployment -n phoenix-sandbox`
 5. Analyser les logs d'audit pour comprendre la compromission
 
 ## 🔗 Ressources

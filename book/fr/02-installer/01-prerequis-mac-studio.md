@@ -1,7 +1,7 @@
 # 🎯 2.1 - Prérequis Mac Studio M3 Ultra
 
 ## 📋 Ce que tu vas apprendre
-- Comment vérifier que ton Mac Studio est prêt pour OpenClaw
+- Comment vérifier que ton Mac Studio est prêt pour Phoenix
 - Comment installer Homebrew (le "magasin d'apps" pour développeurs)
 - Comment installer tous les outils en ligne de commande nécessaires
 - Comment vérifier que tout fonctionne correctement
@@ -109,7 +109,7 @@ Homebrew 4.x.x
 
 ### Étape 4 : Installer Node.js version 22
 
-**Pourquoi ?** OpenClaw a besoin de Node.js version 22 ou plus pour fonctionner. C'est le moteur qui fait tourner l'application.
+**Pourquoi ?** Phoenix a besoin de Node.js version 22 ou plus pour fonctionner. C'est le moteur qui fait tourner l'application.
 
 **Comment ?**
 ```bash
@@ -220,16 +220,16 @@ Kustomize Version: v5.x.x
 
 ### Étape 8 : Créer les dossiers de travail
 
-**Pourquoi ?** On va créer un endroit bien organisé pour tous nos fichiers OpenClaw.
+**Pourquoi ?** On va créer un endroit bien organisé pour tous nos fichiers Phoenix.
 
 **Comment ?**
 ```bash
-mkdir -p ~/openclaw/{config,data,models,logs,backups} && cd ~/openclaw && ls -la
+mkdir -p ~/phoenix/{config,data,models,logs,backups} && cd ~/phoenix && ls -la
 ```
 
 **Vérification :**
 ```bash
-ls -la ~/openclaw/
+ls -la ~/phoenix/
 ```
 
 **Résultat attendu :**
@@ -275,9 +275,9 @@ Le M3 Ultra peut utiliser jusqu'à 75% de cette mémoire pour le GPU (soit ~96 G
 
 **Comment ?**
 ```bash
-cat << 'EOF' > ~/openclaw/check-prerequisites.sh
+cat << 'EOF' > ~/phoenix/check-prerequisites.sh
 #!/bin/bash
-echo "=== Vérification des prérequis OpenClaw ==="
+echo "=== Vérification des prérequis Phoenix ==="
 echo ""
 echo "1. Système :"
 sysctl -n machdep.cpu.brand_string
@@ -292,22 +292,22 @@ echo "   - kubectl: $(kubectl version --client --short 2>/dev/null || echo 'NON 
 echo "   - curl: $(curl --version 2>/dev/null | head -1 || echo 'NON INSTALLÉ')"
 echo "   - jq: $(jq --version 2>/dev/null || echo 'NON INSTALLÉ')"
 echo ""
-echo "3. Dossiers OpenClaw :"
-ls -d ~/openclaw/*/ 2>/dev/null || echo "   Dossiers non créés"
+echo "3. Dossiers Phoenix :"
+ls -d ~/phoenix/*/ 2>/dev/null || echo "   Dossiers non créés"
 echo ""
 echo "=== Vérification terminée ==="
 EOF
-chmod +x ~/openclaw/check-prerequisites.sh
+chmod +x ~/phoenix/check-prerequisites.sh
 ```
 
 **Exécuter la vérification :**
 ```bash
-~/openclaw/check-prerequisites.sh
+~/phoenix/check-prerequisites.sh
 ```
 
 **Résultat attendu :**
 ```
-=== Vérification des prérequis OpenClaw ===
+=== Vérification des prérequis Phoenix ===
 
 1. Système :
 Apple M3 Ultra
@@ -322,12 +322,12 @@ Apple M3 Ultra
    - curl: curl 8.x.x
    - jq: jq-1.x
 
-3. Dossiers OpenClaw :
-/Users/tonnom/openclaw/backups/
-/Users/tonnom/openclaw/config/
-/Users/tonnom/openclaw/data/
-/Users/tonnom/openclaw/logs/
-/Users/tonnom/openclaw/models/
+3. Dossiers Phoenix :
+/Users/tonnom/phoenix/backups/
+/Users/tonnom/phoenix/config/
+/Users/tonnom/phoenix/data/
+/Users/tonnom/phoenix/logs/
+/Users/tonnom/phoenix/models/
 
 === Vérification terminée ===
 ```
@@ -347,7 +347,7 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] curl, wget, jq, yq, git sont installés
 - [ ] Docker Desktop est installé et configuré
 - [ ] kubectl est installé
-- [ ] Les dossiers ~/openclaw/ sont créés
+- [ ] Les dossiers ~/phoenix/ sont créés
 - [ ] Le script de vérification passe sans erreur
 
 ---

@@ -2,7 +2,7 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas decouvrir le marketplace ClawHub et apprendre a installer, configurer et creer des skills pour etendre les capacites d'OpenClaw. Les skills transforment ton assistant en outil specialise.
+Dans ce chapitre, tu vas decouvrir le marketplace ClawHub et apprendre a installer, configurer et creer des skills pour etendre les capacites d'Phoenix. Les skills transforment ton assistant en outil specialise.
 
 **Objectifs :**
 - Comprendre l'architecture des skills
@@ -16,7 +16,7 @@ Dans ce chapitre, tu vas decouvrir le marketplace ClawHub et apprendre a install
 
 | Composant | Requis | Verification |
 |-----------|--------|--------------|
-| OpenClaw Gateway | Actif | `curl http://localhost:18789/api/health` |
+| Phoenix Gateway | Actif | `curl http://localhost:18789/api/health` |
 | Connexion Internet | Pour ClawHub | `ping clawhub.io` |
 | Compte ClawHub | Optionnel | Pour publier des skills |
 
@@ -27,7 +27,7 @@ Dans ce chapitre, tu vas decouvrir le marketplace ClawHub et apprendre a install
 ### Étape 1 : Comprendre les skills
 
 **Pourquoi ?**
-Les skills sont des modules qui ajoutent des fonctionnalites specifiques a OpenClaw. Ils peuvent acceder a des APIs externes, executer du code, manipuler des fichiers ou integrer des services tiers.
+Les skills sont des modules qui ajoutent des fonctionnalites specifiques a Phoenix. Ils peuvent acceder a des APIs externes, executer du code, manipuler des fichiers ou integrer des services tiers.
 
 **Comment ?**
 
@@ -53,7 +53,7 @@ mon-skill/
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw skills types
+docker exec phoenix-gateway phoenix skills types
 ```
 
 ---
@@ -61,37 +61,37 @@ docker exec openclaw-gateway openclaw skills types
 ### Étape 2 : Explorer ClawHub
 
 **Pourquoi ?**
-ClawHub est le marketplace officiel d'OpenClaw. Il propose des skills gratuits et premium, evalues par la communaute.
+ClawHub est le marketplace officiel d'Phoenix. Il propose des skills gratuits et premium, evalues par la communaute.
 
 **Comment ?**
 
 Liste les skills populaires :
 
 ```bash
-docker exec openclaw-gateway openclaw hub search --sort popularity
+docker exec phoenix-gateway phoenix hub search --sort popularity
 ```
 
 Recherche par categorie :
 
 ```bash
-docker exec openclaw-gateway openclaw hub search --category productivity
+docker exec phoenix-gateway phoenix hub search --category productivity
 ```
 
 Recherche par mot-cle :
 
 ```bash
-docker exec openclaw-gateway openclaw hub search "github"
+docker exec phoenix-gateway phoenix hub search "github"
 ```
 
 Affiche les details d'un skill :
 
 ```bash
-docker exec openclaw-gateway openclaw hub info web-search
+docker exec phoenix-gateway phoenix hub info web-search
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw hub categories
+docker exec phoenix-gateway phoenix hub categories
 ```
 
 Tu verras les categories disponibles : productivity, development, communication, data, creative, etc.
@@ -108,30 +108,30 @@ L'installation telecharge le skill, verifie sa signature et l'integre au gateway
 Installe le skill de recherche web :
 
 ```bash
-docker exec openclaw-gateway openclaw hub install web-search
+docker exec phoenix-gateway phoenix hub install web-search
 ```
 
 Installe plusieurs skills :
 
 ```bash
-docker exec openclaw-gateway openclaw hub install github-integration notion-sync calendar-manager
+docker exec phoenix-gateway phoenix hub install github-integration notion-sync calendar-manager
 ```
 
 Installe une version specifique :
 
 ```bash
-docker exec openclaw-gateway openclaw hub install web-search@1.2.0
+docker exec phoenix-gateway phoenix hub install web-search@1.2.0
 ```
 
 Liste les skills installes :
 
 ```bash
-docker exec openclaw-gateway openclaw skills list
+docker exec phoenix-gateway phoenix skills list
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw skills status web-search
+docker exec phoenix-gateway phoenix skills status web-search
 ```
 
 Le skill doit afficher `status: active`.
@@ -148,19 +148,19 @@ Chaque skill a des options de configuration : cles API, preferences, limites. Sa
 Affiche la configuration requise :
 
 ```bash
-docker exec openclaw-gateway openclaw skills config web-search --show-required
+docker exec phoenix-gateway phoenix skills config web-search --show-required
 ```
 
 Configure via CLI :
 
 ```bash
-docker exec openclaw-gateway openclaw skills config web-search --set apiKey=TA_CLE_API --set maxResults=10
+docker exec phoenix-gateway phoenix skills config web-search --set apiKey=TA_CLE_API --set maxResults=10
 ```
 
 Ou modifie le fichier de configuration :
 
 ```bash
-nano ~/.openclaw/skills/web-search/config.json
+nano ~/.phoenix/skills/web-search/config.json
 ```
 
 ```json
@@ -176,12 +176,12 @@ nano ~/.openclaw/skills/web-search/config.json
 Recharge le skill :
 
 ```bash
-docker exec openclaw-gateway openclaw skills reload web-search
+docker exec phoenix-gateway phoenix skills reload web-search
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw skills test web-search "test de recherche"
+docker exec phoenix-gateway phoenix skills test web-search "test de recherche"
 ```
 
 ---
@@ -196,36 +196,36 @@ Tu dois pouvoir activer, desactiver, mettre a jour et supprimer des skills selon
 Desactive un skill temporairement :
 
 ```bash
-docker exec openclaw-gateway openclaw skills disable web-search
+docker exec phoenix-gateway phoenix skills disable web-search
 ```
 
 Reactive un skill :
 
 ```bash
-docker exec openclaw-gateway openclaw skills enable web-search
+docker exec phoenix-gateway phoenix skills enable web-search
 ```
 
 Mets a jour un skill :
 
 ```bash
-docker exec openclaw-gateway openclaw hub update web-search
+docker exec phoenix-gateway phoenix hub update web-search
 ```
 
 Mets a jour tous les skills :
 
 ```bash
-docker exec openclaw-gateway openclaw hub update --all
+docker exec phoenix-gateway phoenix hub update --all
 ```
 
 Supprime un skill :
 
 ```bash
-docker exec openclaw-gateway openclaw hub uninstall web-search
+docker exec phoenix-gateway phoenix hub uninstall web-search
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw skills list --status
+docker exec phoenix-gateway phoenix skills list --status
 ```
 
 ---
@@ -240,7 +240,7 @@ Tu peux creer des skills sur mesure pour tes besoins specifiques : automatisatio
 Cree la structure du skill :
 
 ```bash
-mkdir -p ~/.openclaw/skills/mon-skill/tools && cd ~/.openclaw/skills/mon-skill
+mkdir -p ~/.phoenix/skills/mon-skill/tools && cd ~/.phoenix/skills/mon-skill
 ```
 
 Cree le manifest :
@@ -316,12 +316,12 @@ EOF
 Installe le skill local :
 
 ```bash
-docker exec openclaw-gateway openclaw skills install-local /app/skills/mon-skill
+docker exec phoenix-gateway phoenix skills install-local /app/skills/mon-skill
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw skills test mon-skill calculer '{"expression": "2+2*3"}'
+docker exec phoenix-gateway phoenix skills test mon-skill calculer '{"expression": "2+2*3"}'
 ```
 
 Resultat attendu : `{"result": 8}`
@@ -348,7 +348,7 @@ Resultat attendu : `{"result": 8}`
 
 **Solution :**
 ```bash
-docker exec openclaw-gateway openclaw hub search "nom-partiel"
+docker exec phoenix-gateway phoenix hub search "nom-partiel"
 ```
 
 ---
@@ -359,7 +359,7 @@ docker exec openclaw-gateway openclaw hub search "nom-partiel"
 
 **Solution :**
 ```bash
-docker exec openclaw-gateway openclaw skills config NOM_SKILL --show-required
+docker exec phoenix-gateway phoenix skills config NOM_SKILL --show-required
 ```
 
 Configure les champs marques `required: true`.
@@ -372,7 +372,7 @@ Configure les champs marques `required: true`.
 
 **Solution :**
 ```bash
-docker exec openclaw-gateway openclaw skills permissions NOM_SKILL --grant network,filesystem
+docker exec phoenix-gateway phoenix skills permissions NOM_SKILL --grant network,filesystem
 ```
 
 ---
@@ -383,7 +383,7 @@ docker exec openclaw-gateway openclaw skills permissions NOM_SKILL --grant netwo
 
 **Solution :**
 ```bash
-docker exec openclaw-gateway openclaw skills validate ~/.openclaw/skills/mon-skill
+docker exec phoenix-gateway phoenix skills validate ~/.phoenix/skills/mon-skill
 ```
 
 Corrige les erreurs indiquees dans le manifest.json.
@@ -396,7 +396,7 @@ Corrige les erreurs indiquees dans le manifest.json.
 
 **Solution :**
 ```bash
-docker logs openclaw-gateway | grep "mon-skill"
+docker logs phoenix-gateway | grep "mon-skill"
 ```
 
 Verifie la syntaxe JavaScript et les imports.
@@ -408,10 +408,10 @@ Verifie la syntaxe JavaScript et les imports.
 | Ressource | URL |
 |-----------|-----|
 | ClawHub Marketplace | https://clawhub.io |
-| Documentation Skills | https://docs.openclaw.ai/skills |
-| SDK Developpeur | https://docs.openclaw.ai/sdk |
-| Exemples de Skills | https://github.com/openclaw/skill-examples |
-| Forum Communaute | https://community.openclaw.ai |
+| Documentation Skills | https://docs.phoenix.ai/skills |
+| SDK Developpeur | https://docs.phoenix.ai/sdk |
+| Exemples de Skills | https://github.com/phoenix/skill-examples |
+| Forum Communaute | https://community.phoenix.ai |
 
 ---
 

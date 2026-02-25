@@ -1,20 +1,20 @@
 # =============================================================================
-# OpenClaw Kubernetes Namespace
+# Phoenix Kubernetes Namespace
 # Version: 1.0.0
 # Auteur: Ethan Bernier (ORCID: 0009-0008-9839-5763)
-# Description: Namespace isolé pour OpenClaw avec labels de sécurité
+# Description: Namespace isolé pour Phoenix avec labels de sécurité
 # =============================================================================
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: openclaw
+  name: phoenix
   labels:
     # Identification
-    app.kubernetes.io/name: openclaw
-    app.kubernetes.io/instance: openclaw-production
+    app.kubernetes.io/name: phoenix
+    app.kubernetes.io/instance: phoenix-production
     app.kubernetes.io/version: "2026.1.30"
     app.kubernetes.io/component: namespace
-    app.kubernetes.io/part-of: openclaw-stack
+    app.kubernetes.io/part-of: phoenix-stack
     app.kubernetes.io/managed-by: kubectl
     # Sécurité - Pod Security Standards
     pod-security.kubernetes.io/enforce: restricted
@@ -29,16 +29,16 @@ metadata:
     cost-center: infrastructure
   annotations:
     # Documentation
-    description: "Namespace isolé pour OpenClaw - Assistant IA personnel sécurisé"
-    documentation: "https://github.com/EthanThePhoenix38/Openclaw"
+    description: "Namespace isolé pour Phoenix - Assistant IA personnel sécurisé"
+    documentation: "https://github.com/EthanThePhoenix38/Phoenix"
     # Sécurité
-    security.openclaw.io/isolation-level: "strict"
-    security.openclaw.io/network-policy: "deny-all-by-default"
-    security.openclaw.io/audit-enabled: "true"
+    security.phoenix.io/isolation-level: "strict"
+    security.phoenix.io/network-policy: "deny-all-by-default"
+    security.phoenix.io/audit-enabled: "true"
     # Conformité
-    compliance.openclaw.io/rgpd: "true"
-    compliance.openclaw.io/owasp: "top10-compliant"
-    compliance.openclaw.io/wcag: "2.1-AA"
+    compliance.phoenix.io/rgpd: "true"
+    compliance.phoenix.io/owasp: "top10-compliant"
+    compliance.phoenix.io/wcag: "2.1-AA"
 ---
 # =============================================================================
 # ResourceQuota - Limites de ressources pour le namespace
@@ -47,10 +47,10 @@ metadata:
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: openclaw-quota
-  namespace: openclaw
+  name: phoenix-quota
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: resource-quota
 spec:
   hard:
@@ -78,10 +78,10 @@ spec:
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: openclaw-limits
-  namespace: openclaw
+  name: phoenix-limits
+  namespace: phoenix
   labels:
-    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/name: phoenix
     app.kubernetes.io/component: limit-range
 spec:
   limits:

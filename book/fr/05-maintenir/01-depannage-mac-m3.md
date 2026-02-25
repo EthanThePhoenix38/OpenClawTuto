@@ -2,7 +2,7 @@
 
 ## 📋 Ce que tu vas apprendre
 
-Dans ce chapitre, tu vas maitriser le depannage d'OpenClaw sur Mac Studio M3 Ultra. Tu apprendras a diagnostiquer et resoudre les problemes courants lies au systeme, a Docker, aux LLM et aux performances.
+Dans ce chapitre, tu vas maitriser le depannage d'Phoenix sur Mac Studio M3 Ultra. Tu apprendras a diagnostiquer et resoudre les problemes courants lies au systeme, a Docker, aux LLM et aux performances.
 
 **Objectifs :**
 - Diagnostiquer les problemes systematiquement
@@ -19,8 +19,8 @@ Dans ce chapitre, tu vas maitriser le depannage d'OpenClaw sur Mac Studio M3 Ult
 |-----------|--------|--------------|
 | Acces Terminal | Admin | `whoami` |
 | Docker Desktop | Installe | `docker --version` |
-| OpenClaw | Installe | `ls ~/.openclaw` |
-| Logs accessibles | - | `docker logs openclaw-gateway` |
+| Phoenix | Installe | `ls ~/.phoenix` |
+| Logs accessibles | - | `docker logs phoenix-gateway` |
 
 ---
 
@@ -36,7 +36,7 @@ Un diagnostic methodique permet d'identifier rapidement la source du probleme. C
 Execute le script de diagnostic complet :
 
 ```bash
-echo "=== Diagnostic OpenClaw ===" && echo "Date: $(date)" && echo "" && echo "=== Systeme ===" && sw_vers && echo "" && echo "=== Docker ===" && docker version --format '{{.Server.Version}}' && echo "" && echo "=== Conteneurs ===" && docker ps -a --filter "name=openclaw" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" && echo "" && echo "=== Gateway Health ===" && curl -s http://localhost:18789/api/health | jq '.status' 2>/dev/null || echo "Gateway non accessible" && echo "" && echo "=== Ollama ===" && curl -s http://localhost:11434/api/tags | jq '.models[].name' 2>/dev/null || echo "Ollama non accessible" && echo "" && echo "=== Ressources ===" && top -l 1 | head -10 && echo "" && echo "=== Espace disque ===" && df -h /
+echo "=== Diagnostic Phoenix ===" && echo "Date: $(date)" && echo "" && echo "=== Systeme ===" && sw_vers && echo "" && echo "=== Docker ===" && docker version --format '{{.Server.Version}}' && echo "" && echo "=== Conteneurs ===" && docker ps -a --filter "name=phoenix" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" && echo "" && echo "=== Gateway Health ===" && curl -s http://localhost:18789/api/health | jq '.status' 2>/dev/null || echo "Gateway non accessible" && echo "" && echo "=== Ollama ===" && curl -s http://localhost:11434/api/tags | jq '.models[].name' 2>/dev/null || echo "Ollama non accessible" && echo "" && echo "=== Ressources ===" && top -l 1 | head -10 && echo "" && echo "=== Espace disque ===" && df -h /
 ```
 
 **Vérification :**
@@ -100,7 +100,7 @@ docker context use default && sudo launchctl stop com.docker.dockerd && sudo lau
 Verifie les logs :
 
 ```bash
-docker logs openclaw-gateway --tail 100
+docker logs phoenix-gateway --tail 100
 ```
 
 Causes frequentes :
@@ -269,7 +269,7 @@ OLLAMA_NUM_GPU=999 ollama run llama3.2:8b "Test" --verbose
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw benchmark --quick
+docker exec phoenix-gateway phoenix benchmark --quick
 ```
 
 ---
@@ -277,20 +277,20 @@ docker exec openclaw-gateway openclaw benchmark --quick
 ### Étape 5 : Problemes de configuration
 
 **Pourquoi ?**
-Un fichier de configuration corrompu ou mal forme peut empecher OpenClaw de demarrer ou de fonctionner correctement.
+Un fichier de configuration corrompu ou mal forme peut empecher Phoenix de demarrer ou de fonctionner correctement.
 
 **Comment ?**
 
 **Valide la configuration JSON :**
 
 ```bash
-cat ~/.openclaw/openclaw.json | jq . > /dev/null && echo "JSON valide" || echo "JSON invalide"
+cat ~/.phoenix/phoenix.json | jq . > /dev/null && echo "JSON valide" || echo "JSON invalide"
 ```
 
 **Sauvegarde et reset :**
 
 ```bash
-cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.backup && docker exec openclaw-gateway openclaw config init --force
+cp ~/.phoenix/phoenix.json ~/.phoenix/phoenix.json.backup && docker exec phoenix-gateway phoenix config init --force
 ```
 
 **Probleme : "Permission denied"**
@@ -298,7 +298,7 @@ cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.backup && docker exec ope
 Corrige les permissions :
 
 ```bash
-chmod 755 ~/.openclaw && chmod 644 ~/.openclaw/*.json && chmod -R 755 ~/.openclaw/skills
+chmod 755 ~/.phoenix && chmod 644 ~/.phoenix/*.json && chmod -R 755 ~/.phoenix/skills
 ```
 
 **Probleme : "Port already in use"**
@@ -320,7 +320,7 @@ kill -9 $(lsof -t -i :18789)
 Verifie :
 
 ```bash
-docker exec openclaw-gateway env | grep -E "OPENCLAW|OLLAMA"
+docker exec phoenix-gateway env | grep -E "PHOENIX|OLLAMA"
 ```
 
 Ajoute dans le docker-compose ou la commande run :
@@ -331,7 +331,7 @@ docker run -e OLLAMA_HOST=host.docker.internal:11434 ...
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw config validate
+docker exec phoenix-gateway phoenix config validate
 ```
 
 ---
@@ -339,7 +339,7 @@ docker exec openclaw-gateway openclaw config validate
 ### Étape 6 : Recuperation apres crash
 
 **Pourquoi ?**
-Un crash systeme peut laisser OpenClaw dans un etat inconsistant. Une procedure de recuperation methodique evite la perte de donnees.
+Un crash systeme peut laisser Phoenix dans un etat inconsistant. Une procedure de recuperation methodique evite la perte de donnees.
 
 **Comment ?**
 
@@ -348,19 +348,19 @@ Un crash systeme peut laisser OpenClaw dans un etat inconsistant. Une procedure 
 1. Arrete tout proprement :
 
 ```bash
-docker stop $(docker ps -aq --filter "name=openclaw") 2>/dev/null && docker rm $(docker ps -aq --filter "name=openclaw") 2>/dev/null
+docker stop $(docker ps -aq --filter "name=phoenix") 2>/dev/null && docker rm $(docker ps -aq --filter "name=phoenix") 2>/dev/null
 ```
 
 2. Verifie l'integrite des volumes :
 
 ```bash
-docker volume ls --filter "name=openclaw"
+docker volume ls --filter "name=phoenix"
 ```
 
 3. Sauvegarde les donnees critiques :
 
 ```bash
-mkdir -p ~/openclaw-backup-$(date +%Y%m%d) && cp -r ~/.openclaw ~/openclaw-backup-$(date +%Y%m%d)/
+mkdir -p ~/phoenix-backup-$(date +%Y%m%d) && cp -r ~/.phoenix ~/phoenix-backup-$(date +%Y%m%d)/
 ```
 
 4. Nettoie Docker :
@@ -369,10 +369,10 @@ mkdir -p ~/openclaw-backup-$(date +%Y%m%d) && cp -r ~/.openclaw ~/openclaw-backu
 docker system prune -f && docker volume prune -f
 ```
 
-5. Redemarre OpenClaw :
+5. Redemarre Phoenix :
 
 ```bash
-docker-compose -f ~/.openclaw/docker-compose.yml up -d
+docker-compose -f ~/.phoenix/docker-compose.yml up -d
 ```
 
 6. Verifie le statut :
@@ -384,12 +384,12 @@ sleep 10 && curl http://localhost:18789/api/health | jq
 **Recuperation des logs apres crash :**
 
 ```bash
-docker logs openclaw-gateway --since 1h > ~/openclaw-crash-logs.txt 2>&1
+docker logs phoenix-gateway --since 1h > ~/phoenix-crash-logs.txt 2>&1
 ```
 
 **Vérification :**
 ```bash
-docker exec openclaw-gateway openclaw status --full
+docker exec phoenix-gateway phoenix status --full
 ```
 
 ---
@@ -399,7 +399,7 @@ docker exec openclaw-gateway openclaw status --full
 - [ ] Script de diagnostic execute sans erreur
 - [ ] Docker fonctionne correctement
 - [ ] Ollama repond et les modeles sont charges
-- [ ] Gateway OpenClaw est healthy
+- [ ] Gateway Phoenix est healthy
 - [ ] Performances CPU/RAM dans les normes
 - [ ] Configuration JSON valide
 - [ ] Procedure de recuperation testee
@@ -414,7 +414,7 @@ docker exec openclaw-gateway openclaw status --full
 
 **Solution :**
 ```bash
-docker kill --signal=SIGKILL openclaw-gateway && docker rm -f openclaw-gateway
+docker kill --signal=SIGKILL phoenix-gateway && docker rm -f phoenix-gateway
 ```
 
 Si ca ne marche pas, redemarre Docker Desktop.
@@ -447,7 +447,7 @@ ollama list && ollama rm modele-inutilise
 Redemarre les services un par un :
 
 ```bash
-docker restart openclaw-gateway && sleep 5 && ollama serve &
+docker restart phoenix-gateway && sleep 5 && ollama serve &
 ```
 
 ---
@@ -467,7 +467,7 @@ top -o cpu
 Si c'est ollama ou Docker, redemarre :
 
 ```bash
-pkill ollama && docker restart openclaw-gateway
+pkill ollama && docker restart phoenix-gateway
 ```
 
 ---
@@ -479,8 +479,8 @@ pkill ollama && docker restart openclaw-gateway
 | Docker Troubleshooting | https://docs.docker.com/desktop/troubleshoot/overview/ |
 | Ollama FAQ | https://github.com/ollama/ollama/blob/main/docs/faq.md |
 | Apple Silicon Docker | https://docs.docker.com/desktop/install/mac-install/ |
-| OpenClaw Status Page | https://status.openclaw.ai |
-| Forum Support | https://community.openclaw.ai/support |
+| Phoenix Status Page | https://status.phoenix.ai |
+| Forum Support | https://community.phoenix.ai/support |
 
 ---
 

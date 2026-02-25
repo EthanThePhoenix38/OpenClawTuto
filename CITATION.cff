@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "Si vous utilisez ce guide, merci de le citer comme indiqué ci-dessous. / If you use this guide, please cite it as below."
 type: software
-title: "OpenClaw Secure K8s Guide"
-abstract: "Guide complet pour déployer OpenClaw en toute sécurité sur Mac Studio M3 Ultra avec Kubernetes k3s, isolation réseau, et LLM locaux."
+title: "Phoenix Secure K8s Guide"
+abstract: "Guide complet pour déployer Phoenix en toute sécurité sur Mac Studio M3 Ultra avec Kubernetes k3s, isolation réseau, et LLM locaux."
 authors:
   - family-names: "Bernier"
     given-names: "Ethan"
@@ -11,10 +11,10 @@ authors:
 version: "1.0.0"
 date-released: "2026-02-02"
 license: "MIT"
-repository-code: "https://github.com/EthanThePhoenix38/Openclaw"
-url: "https://github.com/EthanThePhoenix38/Openclaw"
+repository-code: "https://github.com/EthanThePhoenix38/Phoenix"
+url: "https://github.com/EthanThePhoenix38/Phoenix"
 keywords:
-  - openclaw
+  - phoenix
   - kubernetes
   - k3s
   - docker
@@ -28,14 +28,14 @@ keywords:
   - privacy
 identifiers:
   - type: url
-    value: "https://github.com/EthanThePhoenix38/Openclaw"
+    value: "https://github.com/EthanThePhoenix38/Phoenix"
     description: "GitHub repository"
 preferred-citation:
   type: manual
-  title: "OpenClaw Secure K8s Guide: Deploy OpenClaw securely on Mac Studio M3 Ultra"
+  title: "Phoenix Secure K8s Guide: Deploy Phoenix securely on Mac Studio M3 Ultra"
   authors:
     - family-names: "Bernier"
       given-names: "Ethan"
       orcid: "https://orcid.org/0009-0008-9839-5763"
   year: 2026
-  url: "https://github.com/EthanThePhoenix38/Openclaw"
+  url: "https://github.com/EthanThePhoenix38/Phoenix"

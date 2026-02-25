@@ -194,18 +194,18 @@ kube-node-lease   Active   5m
 
 ---
 
-### Étape 7 : Créer un namespace pour OpenClaw
+### Étape 7 : Créer un namespace pour Phoenix
 
-**Pourquoi ?** Les namespaces sont comme des dossiers pour organiser les applications. On crée un namespace dédié à OpenClaw.
+**Pourquoi ?** Les namespaces sont comme des dossiers pour organiser les applications. On crée un namespace dédié à Phoenix.
 
 **Comment ?**
 ```bash
-kubectl create namespace openclaw
+kubectl create namespace phoenix
 ```
 
 **Définir comme namespace par défaut :**
 ```bash
-kubectl config set-context --current --namespace=openclaw
+kubectl config set-context --current --namespace=phoenix
 ```
 
 **Vérification :**
@@ -215,7 +215,7 @@ kubectl config view --minify | grep namespace
 
 **Résultat attendu :**
 ```
-    namespace: openclaw
+    namespace: phoenix
 ```
 
 ---
@@ -271,7 +271,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: test-pvc
-  namespace: openclaw
+  namespace: phoenix
 spec:
   accessModes:
     - ReadWriteOnce
@@ -284,7 +284,7 @@ EOF
 
 **Vérification :**
 ```bash
-kubectl get pvc -n openclaw
+kubectl get pvc -n phoenix
 ```
 
 **Résultat attendu :**
@@ -297,14 +297,14 @@ Le statut "Pending" est normal jusqu'à ce qu'un Pod utilise ce PVC.
 
 **Nettoyer le test :**
 ```bash
-kubectl delete pvc test-pvc -n openclaw
+kubectl delete pvc test-pvc -n phoenix
 ```
 
 ---
 
 ### Étape 10 : Configurer l'accès réseau entre Mac et k3s
 
-**Pourquoi ?** On doit pouvoir accéder aux services k3s depuis notre Mac (par exemple, OpenClaw sur le port 18789).
+**Pourquoi ?** On doit pouvoir accéder aux services k3s depuis notre Mac (par exemple, Phoenix sur le port 18789).
 
 **Comment ?**
 
@@ -315,21 +315,21 @@ ping -c 3 $(multipass info k3s-master | grep IPv4 | awk '{print $2}')
 
 **Configurer le port forwarding automatique :**
 ```bash
-cat << 'EOF' > ~/openclaw/config/port-forward.sh
+cat << 'EOF' > ~/phoenix/config/port-forward.sh
 #!/bin/bash
-# Script de port-forwarding pour OpenClaw
+# Script de port-forwarding pour Phoenix
 
 K3S_IP=$(multipass info k3s-master | grep IPv4 | awk '{print $2}')
 
 echo "Démarrage du port-forwarding vers $K3S_IP..."
-echo "OpenClaw sera accessible sur http://localhost:18789"
+echo "Phoenix sera accessible sur http://localhost:18789"
 
-# Port-forward OpenClaw (sera utilisé après le déploiement)
-# kubectl port-forward -n openclaw svc/openclaw 18789:18789 &
+# Port-forward Phoenix (sera utilisé après le déploiement)
+# kubectl port-forward -n phoenix svc/phoenix 18789:18789 &
 
 echo "Port-forwarding prêt!"
 EOF
-chmod +x ~/openclaw/config/port-forward.sh
+chmod +x ~/phoenix/config/port-forward.sh
 ```
 
 ---
@@ -340,7 +340,7 @@ chmod +x ~/openclaw/config/port-forward.sh
 
 **Comment ?**
 ```bash
-cat << 'EOF' > ~/openclaw/k3s-control.sh
+cat << 'EOF' > ~/phoenix/k3s-control.sh
 #!/bin/bash
 
 case "$1" in
@@ -377,22 +377,22 @@ case "$1" in
         ;;
 esac
 EOF
-chmod +x ~/openclaw/k3s-control.sh
+chmod +x ~/phoenix/k3s-control.sh
 ```
 
 **Utilisation :**
 ```bash
 # Voir le statut
-~/openclaw/k3s-control.sh status
+~/phoenix/k3s-control.sh status
 
 # Arrêter k3s
-~/openclaw/k3s-control.sh stop
+~/phoenix/k3s-control.sh stop
 
 # Démarrer k3s
-~/openclaw/k3s-control.sh start
+~/phoenix/k3s-control.sh start
 
 # Se connecter à la VM
-~/openclaw/k3s-control.sh shell
+~/phoenix/k3s-control.sh shell
 
 # Sortir de la VM (obligatoire sinon le prochain script ne marchera pas depuis la VM)
 exit
@@ -441,13 +441,13 @@ launchctl list | grep k3s
 
 ### Étape 13 : Script de vérification complète
 
-**Pourquoi ?** Un script qui teste tout pour être sûr que k3s est prêt pour OpenClaw.
+**Pourquoi ?** Un script qui teste tout pour être sûr que k3s est prêt pour Phoenix.
 
 **Comment ?**
 ```bash
-cat << 'EOF' > ~/openclaw/test-k3s.sh
+cat << 'EOF' > ~/phoenix/test-k3s.sh
 #!/bin/bash
-echo "=== Test k3s pour OpenClaw ==="
+echo "=== Test k3s pour Phoenix ==="
 echo ""
 
 # Test 1: VM active
@@ -484,15 +484,15 @@ else
     echo "   ⚠️  Noeud k3s: $NODE_STATUS"
 fi
 
-# Test 4: Namespace openclaw
+# Test 4: Namespace phoenix
 echo ""
-echo "4. Vérification du namespace openclaw..."
-if kubectl get namespace openclaw > /dev/null 2>&1; then
-    echo "   ✅ Namespace openclaw existe"
+echo "4. Vérification du namespace phoenix..."
+if kubectl get namespace phoenix > /dev/null 2>&1; then
+    echo "   ✅ Namespace phoenix existe"
 else
-    echo "   ⚠️  Namespace openclaw n'existe pas"
+    echo "   ⚠️  Namespace phoenix n'existe pas"
     echo "   Création du namespace..."
-    kubectl create namespace openclaw
+    kubectl create namespace phoenix
 fi
 
 # Test 5: Stockage
@@ -533,17 +533,17 @@ echo "Kubeconfig: $KUBECONFIG"
 echo ""
 echo "=== Tests terminés ==="
 EOF
-chmod +x ~/openclaw/test-k3s.sh
+chmod +x ~/phoenix/test-k3s.sh
 ```
 
 **Exécuter les tests :**
 ```bash
-~/openclaw/test-k3s.sh
+~/phoenix/test-k3s.sh
 ```
 
 **Résultat attendu :**
 ```
-=== Test k3s pour OpenClaw ===
+=== Test k3s pour Phoenix ===
 
 1. Vérification de la VM Multipass...
    ✅ VM k3s-master active
@@ -554,8 +554,8 @@ chmod +x ~/openclaw/test-k3s.sh
 3. Vérification du noeud k3s...
    ✅ Noeud k3s prêt
 
-4. Vérification du namespace openclaw...
-   ✅ Namespace openclaw existe
+4. Vérification du namespace phoenix...
+   ✅ Namespace phoenix existe
 
 5. Vérification du stockage...
    ✅ StorageClass disponible: local-path
@@ -586,7 +586,7 @@ Avant de passer au chapitre suivant, vérifie que :
 - [ ] Le fichier kubeconfig est copié sur le Mac
 - [ ] kubectl peut se connecter au cluster
 - [ ] Le noeud k3s est en état "Ready"
-- [ ] Le namespace "openclaw" est créé
+- [ ] Le namespace "phoenix" est créé
 - [ ] Helm est installé
 - [ ] Le stockage local-path fonctionne
 - [ ] Le réseau entre Mac et VM fonctionne
@@ -675,6 +675,6 @@ Recrée la VM depuis l'étape 3.
 
 ## ➡️ Prochaine étape
 
-k3s est installé et fonctionnel ! Tu as maintenant un vrai cluster Kubernetes léger qui tourne sur ton Mac Studio. Dans le prochain chapitre, on va enfin déployer **OpenClaw** dans ce cluster.
+k3s est installé et fonctionnel ! Tu as maintenant un vrai cluster Kubernetes léger qui tourne sur ton Mac Studio. Dans le prochain chapitre, on va enfin déployer **Phoenix** dans ce cluster.
 
-**Chapitre suivant :** [2.5 - Déploiement OpenClaw dans k3s](./05-deploiement-openclaw.md)
+**Chapitre suivant :** [2.5 - Déploiement Phoenix dans k3s](./05-deploiement-phoenix.md)
